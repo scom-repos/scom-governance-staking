@@ -1,0 +1,18 @@
+{
+    "name": "@scom/scom-governance-staking",
+    "type": "widget",
+    "version": "0.1.0",
+    "dependencies": [
+        "@ijstech/components",
+        "@scom/scom-network-list",
+        "@scom/scom-multicall",
+        "@scom/scom-dapp-container",
+        "@scom/scom-network-picker",
+        "@scom/scom-wallet-modal",
+        "@scom/scom-tx-status-modal",
+        "@ijstech/eth-wallet",
+        "@scom/scom-token-list",
+        "@scom/scom-token-modal",
+        "@scom/scom-token-input"
+    ]
+}
