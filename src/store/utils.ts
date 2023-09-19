@@ -106,29 +106,3 @@ export const getWETH = (chainId: number): ITokenObject => {
   let wrappedToken = WETHByChainId[chainId];
   return wrappedToken;
 }
-
-const formatNumberWithSeparators = (value: number, precision?: number) => {
-  if (!value) value = 0;
-  if (precision) {
-    let outputStr = '';
-    if (value >= 1) {
-      const unit = Math.pow(10, precision);
-      const rounded = Math.floor(value * unit) / unit;
-      outputStr = rounded.toLocaleString('en-US', { maximumFractionDigits: precision });
-    } else {
-      outputStr = value.toLocaleString('en-US', { maximumSignificantDigits: precision });
-    }
-    if (outputStr.length > 18) {
-      outputStr = outputStr.substring(0, 18) + '...';
-    }
-    return outputStr;
-  }
-  return value.toLocaleString('en-US');
-}
-
-export function formatNumber(val: any) {
-  if (typeof val === 'string') {
-    val = new BigNumber(val).toNumber();
-  }
-  return formatNumberWithSeparators(val, 4);
-}

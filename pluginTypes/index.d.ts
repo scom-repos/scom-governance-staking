@@ -42,7 +42,6 @@ declare module "@scom/scom-governance-staking/store/utils.ts" {
     }
     export function isClientWalletConnected(): boolean;
     export const getWETH: (chainId: number) => ITokenObject;
-    export function formatNumber(val: any): string;
 }
 /// <amd-module name="@scom/scom-governance-staking/store/index.ts" />
 declare module "@scom/scom-governance-staking/store/index.ts" {

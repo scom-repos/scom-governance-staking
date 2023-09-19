@@ -11,14 +11,15 @@ import {
     Module,
     Panel,
     Styles,
-    VStack
+    VStack,
+    FormatUtils
 } from '@ijstech/components';
 import ScomDappContainer from '@scom/scom-dapp-container';
 import Assets from './assets';
 import { INetworkConfig } from '@scom/scom-network-picker';
 import ScomWalletModal, { IWalletPlugin } from '@scom/scom-wallet-modal';
 import ScomTxStatusModal from '@scom/scom-tx-status-modal';
-import { formatNumber, isClientWalletConnected, State } from './store/index';
+import { isClientWalletConnected, State } from './store/index';
 import configData from './data.json';
 import { IGovernanceStaking } from './interface';
 import { BigNumber, Constants, Wallet } from '@ijstech/eth-wallet';
@@ -337,7 +338,7 @@ export default class ScomGovernanceStaking extends Module {
                             tooltip={{ content: 'Your locked staked. Cannot be used for voting at governance portal.', placement: 'right' }}
                         ></i-icon>
                     </i-hstack>
-                    <i-label caption={formatNumber(this.totalStakedBalance)} font={font}></i-label>
+                    <i-label caption={FormatUtils.formatNumberWithSeparators(this.totalStakedBalance, 4)} font={font}></i-label>
                 </i-hstack>
             </i-vstack>
         )

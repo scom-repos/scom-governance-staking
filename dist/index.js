@@ -57,7 +57,7 @@ define("@scom/scom-governance-staking/store/core.ts", ["require", "exports"], fu
 define("@scom/scom-governance-staking/store/utils.ts", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-network-list", "@scom/scom-token-list", "@scom/scom-governance-staking/store/core.ts"], function (require, exports, components_2, eth_wallet_1, scom_network_list_1, scom_token_list_1, core_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.formatNumber = exports.getWETH = exports.isClientWalletConnected = exports.State = void 0;
+    exports.getWETH = exports.isClientWalletConnected = exports.State = void 0;
     class State {
         constructor(options) {
             this.infuraId = '';
@@ -152,33 +152,6 @@ define("@scom/scom-governance-staking/store/utils.ts", ["require", "exports", "@
         return wrappedToken;
     };
     exports.getWETH = getWETH;
-    const formatNumberWithSeparators = (value, precision) => {
-        if (!value)
-            value = 0;
-        if (precision) {
-            let outputStr = '';
-            if (value >= 1) {
-                const unit = Math.pow(10, precision);
-                const rounded = Math.floor(value * unit) / unit;
-                outputStr = rounded.toLocaleString('en-US', { maximumFractionDigits: precision });
-            }
-            else {
-                outputStr = value.toLocaleString('en-US', { maximumSignificantDigits: precision });
-            }
-            if (outputStr.length > 18) {
-                outputStr = outputStr.substring(0, 18) + '...';
-            }
-            return outputStr;
-        }
-        return value.toLocaleString('en-US');
-    };
-    function formatNumber(val) {
-        if (typeof val === 'string') {
-            val = new eth_wallet_1.BigNumber(val).toNumber();
-        }
-        return formatNumberWithSeparators(val, 4);
-    }
-    exports.formatNumber = formatNumber;
 });
 define("@scom/scom-governance-staking/store/index.ts", ["require", "exports", "@scom/scom-governance-staking/store/utils.ts"], function (require, exports, utils_1) {
     "use strict";
@@ -557,7 +530,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                     this.$render("i-hstack", { opacity: 0.75, gap: "0.5rem" },
                         this.$render("i-label", { caption: "Staked Balance", font: font }),
                         this.$render("i-icon", { name: "question-circle", fill: "#fff", width: 14, height: 14, tooltip: { content: 'Your locked staked. Cannot be used for voting at governance portal.', placement: 'right' } })),
-                    this.$render("i-label", { caption: (0, index_1.formatNumber)(this.totalStakedBalance), font: font }))));
+                    this.$render("i-label", { caption: components_4.FormatUtils.formatNumberWithSeparators(this.totalStakedBalance, 4), font: font }))));
         }
         render() {
             return (this.$render("i-scom-dapp-container", { id: "dappContainer" },
