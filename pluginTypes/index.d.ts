@@ -138,6 +138,7 @@ declare module "@scom/scom-governance-staking" {
         private btnApprove;
         private btnConfirm;
         private btnConnect;
+        private pnlActionButtons;
         private txStatusModal;
         private mdWallet;
         private state;

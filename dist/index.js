@@ -398,20 +398,20 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                     await this.initWallet();
                     await this.updateBalance();
                     this.tokenSelection.token = this.state.getGovToken(chainId);
-                    const token = this.state.getGovToken(this.chainId);
-                    await this.approvalModelAction.checkAllowance(token, this.tokenSelection.value);
                     const connected = (0, index_1.isClientWalletConnected)();
                     if (!connected || !this.state.isRpcWalletConnected()) {
                         this.btnConnect.caption = connected ? "Switch Network" : "Connect Wallet";
                         this.btnConnect.visible = true;
                         this.btnConnect.enabled = true;
-                        this.btnApprove.visible = false;
-                        this.btnConfirm.visible = false;
+                        this.pnlActionButtons.visible = false;
                     }
                     else {
                         this.btnConnect.visible = false;
                         this.btnConnect.enabled = false;
+                        this.pnlActionButtons.visible = true;
                     }
+                    const token = this.state.getGovToken(this.chainId);
+                    this.approvalModelAction.checkAllowance(token, this.tokenSelection.value);
                     try {
                         if (connected) {
                             this.minStakePeriod = await (0, api_1.getMinStakePeriod)(this.state);
@@ -823,8 +823,9 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                                     this.$render("i-label", { id: "lblAvailableOn", caption: "-", font: { size: '0.875rem', color: Theme.text.third } })))),
                         this.$render("i-vstack", { class: "none-select", padding: { top: '1rem', bottom: '1rem', left: '1rem', right: '1rem' }, maxWidth: 440, margin: { left: 'auto', right: 'auto' } },
                             this.$render("i-hstack", { gap: "0.5rem" },
-                                this.$render("i-button", { id: "btnApprove", caption: "Approve", height: "auto", width: "100%", padding: { top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }, border: { radius: 5 }, font: { weight: 600 }, rightIcon: { spin: true, visible: false }, class: "btn-os", enabled: false, visible: false, onClick: this.onApproveToken.bind(this) }),
-                                this.$render("i-button", { id: "btnConfirm", caption: 'Add', height: "auto", width: "100%", padding: { top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }, border: { radius: 5 }, font: { weight: 600 }, rightIcon: { spin: true, visible: false }, enabled: false, visible: false, class: "btn-os", onClick: this.handleConfirm.bind(this) }),
+                                this.$render("i-hstack", { id: "pnlActionButtons", width: "100%", gap: "0.5rem", visible: false },
+                                    this.$render("i-button", { id: "btnApprove", caption: "Approve", height: "auto", width: "100%", padding: { top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }, border: { radius: 5 }, font: { weight: 600 }, rightIcon: { spin: true, visible: false }, class: "btn-os", enabled: false, visible: false, onClick: this.onApproveToken.bind(this) }),
+                                    this.$render("i-button", { id: "btnConfirm", caption: 'Add', height: "auto", width: "100%", padding: { top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }, border: { radius: 5 }, font: { weight: 600 }, rightIcon: { spin: true, visible: false }, enabled: false, visible: false, class: "btn-os", onClick: this.handleConfirm.bind(this) })),
                                 this.$render("i-button", { id: "btnConnect", caption: "Connect Wallet", enabled: false, visible: false, width: "100%", padding: { top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }, class: "btn-os", onClick: this.connectWallet.bind(this) })))),
                     this.$render("i-scom-tx-status-modal", { id: "txStatusModal" }),
                     this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] }))));

@@ -81,6 +81,7 @@ export default class ScomGovernanceStaking extends Module {
     private btnApprove: Button;
     private btnConfirm: Button;
     private btnConnect: Button;
+    private pnlActionButtons: HStack;
     private txStatusModal: ScomTxStatusModal;
     private mdWallet: ScomWalletModal;
     private state: State;
@@ -314,19 +315,19 @@ export default class ScomGovernanceStaking extends Module {
             await this.initWallet();
             await this.updateBalance();
             this.tokenSelection.token = this.state.getGovToken(chainId);
-            const token = this.state.getGovToken(this.chainId);
-            await this.approvalModelAction.checkAllowance(token, this.tokenSelection.value);
             const connected = isClientWalletConnected();
             if (!connected || !this.state.isRpcWalletConnected()) {
                 this.btnConnect.caption = connected ? "Switch Network" : "Connect Wallet";
                 this.btnConnect.visible = true;
                 this.btnConnect.enabled = true;
-                this.btnApprove.visible = false;
-                this.btnConfirm.visible = false;
+                this.pnlActionButtons.visible = false;
             } else {
                 this.btnConnect.visible = false;
                 this.btnConnect.enabled = false;
+                this.pnlActionButtons.visible = true;
             }
+            const token = this.state.getGovToken(this.chainId);
+            this.approvalModelAction.checkAllowance(token, this.tokenSelection.value);
             try {
                 if (connected) {
                     this.minStakePeriod = await getMinStakePeriod(this.state);
@@ -646,32 +647,34 @@ export default class ScomGovernanceStaking extends Module {
                             margin={{ left: 'auto', right: 'auto' }}
                         >
                             <i-hstack gap="0.5rem">
-                                <i-button
-                                    id="btnApprove"
-                                    caption="Approve"
-                                    height="auto" width="100%"
-                                    padding={{ top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }}
-                                    border={{ radius: 5 }}
-                                    font={{ weight: 600 }}
-                                    rightIcon={{ spin: true, visible: false }}
-                                    class="btn-os"
-                                    enabled={false}
-                                    visible={false}
-                                    onClick={this.onApproveToken.bind(this)}
-                                ></i-button>
-                                <i-button
-                                    id="btnConfirm"
-                                    caption='Add'
-                                    height="auto" width="100%"
-                                    padding={{ top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }}
-                                    border={{ radius: 5 }}
-                                    font={{ weight: 600 }}
-                                    rightIcon={{ spin: true, visible: false }}
-                                    enabled={false}
-                                    visible={false}
-                                    class="btn-os"
-                                    onClick={this.handleConfirm.bind(this)}
-                                ></i-button>
+                                <i-hstack id="pnlActionButtons" width="100%" gap="0.5rem" visible={false}>
+                                    <i-button
+                                        id="btnApprove"
+                                        caption="Approve"
+                                        height="auto" width="100%"
+                                        padding={{ top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }}
+                                        border={{ radius: 5 }}
+                                        font={{ weight: 600 }}
+                                        rightIcon={{ spin: true, visible: false }}
+                                        class="btn-os"
+                                        enabled={false}
+                                        visible={false}
+                                        onClick={this.onApproveToken.bind(this)}
+                                    ></i-button>
+                                    <i-button
+                                        id="btnConfirm"
+                                        caption='Add'
+                                        height="auto" width="100%"
+                                        padding={{ top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }}
+                                        border={{ radius: 5 }}
+                                        font={{ weight: 600 }}
+                                        rightIcon={{ spin: true, visible: false }}
+                                        enabled={false}
+                                        visible={false}
+                                        class="btn-os"
+                                        onClick={this.handleConfirm.bind(this)}
+                                    ></i-button>
+                                </i-hstack>
                                 <i-button
                                     id="btnConnect"
                                     caption="Connect Wallet"
