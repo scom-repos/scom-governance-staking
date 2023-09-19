@@ -12,7 +12,10 @@ import {
     Panel,
     Styles,
     VStack,
-    FormatUtils
+    FormatUtils,
+    moment,
+    IComboItem,
+    Icon
 } from '@ijstech/components';
 import ScomDappContainer from '@scom/scom-dapp-container';
 import Assets from './assets';
@@ -26,6 +29,7 @@ import { BigNumber, Constants, Wallet } from '@ijstech/eth-wallet';
 import customStyles from './index.css';
 import { tokenStore } from '@scom/scom-token-list';
 import ScomTokenInput from '@scom/scom-token-input';
+import { getGovState, getMinStakePeriod } from './api';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -67,9 +71,16 @@ export default class ScomGovernanceStaking extends Module {
     private pnlLock: HStack;
     private comboAction: ComboBox;
     private lblBalance: Label;
-    private inputElm: Input;
     private tokenSelection: ScomTokenInput;
     private pnlAddStake: VStack;
+    private lblAddStake: Label;
+    private lblTotalStakedBalance: Label;
+    private lblTotalVotingBalance: Label;
+    private iconAvailableOn: Icon;
+    private lblAvailableOn: Label;
+    private btnApprove: Button;
+    private btnConfirm: Button;
+    private btnConnect: Button;
     private txStatusModal: ScomTxStatusModal;
     private mdWallet: ScomWalletModal;
     private state: State;
@@ -78,10 +89,12 @@ export default class ScomGovernanceStaking extends Module {
         networks: []
     };
     tag: any = {};
-    private stakedBalance: string = '0';
-    private votingBalance: string = '0';
+    private stakedBalance: number = 0;
+    private votingBalance: number = 0;
     private availableStake: string = '0';
     private action: ActionType = "add";
+    private freezedStake: any = {};
+    private minStakePeriod: number = 0;
 
     private get chainId() {
         return this.state.getChainId();
@@ -118,10 +131,18 @@ export default class ScomGovernanceStaking extends Module {
 
     private get totalStakedBalance(): string {
         if (this.action === 'add') {
-            return new BigNumber(this.stakedBalance).plus(this.inputElm.value ? this.inputElm.value : 0).toFixed();
+            return new BigNumber(this.stakedBalance).plus(this.tokenSelection.value ? this.tokenSelection.value : 0).toFixed();
         } else {
-            return new BigNumber(this.stakedBalance).minus(this.inputElm.value ? this.inputElm.value : 0).toFixed();
+            return new BigNumber(this.stakedBalance).minus(this.tokenSelection.value ? this.tokenSelection.value : 0).toFixed();
         }
+    }
+
+    private get totalVotingBalance(): string {
+        if (this.action === 'add')
+            return this.votingBalance.toString();
+        if (new BigNumber(this.tokenSelection.value || 0).gte(this.freezedStake.amount))
+            return this.totalStakedBalance;
+        return this.votingBalance.toString();
     }
 
     private get govTokenAddress() {
@@ -131,6 +152,18 @@ export default class ScomGovernanceStaking extends Module {
     private get OAXWalletBalance(): string {
         const balances = tokenStore.tokenBalances || [];
         return balances[this.govTokenAddress.toLowerCase()] || '0';
+    }
+
+    private get lastAvailableOn() {
+        return moment(new Date())
+            .add(this.minStakePeriod, 'second')
+            .format('MMM DD, YYYY');
+    }
+
+    get isBtnDisabled() {
+        const bal = new BigNumber(this.balance);
+        const val = new BigNumber(this.tokenSelection.value || 0);
+        return val.lte(0) || val.gt(bal) || !this.action;
     }
 
     get balance() {
@@ -273,6 +306,38 @@ export default class ScomGovernanceStaking extends Module {
             const chainId = this.chainId;
             await this.initWallet();
             this.tokenSelection.token = this.state.getGovToken(chainId);
+            const connected = isClientWalletConnected();
+            if (!connected || !this.state.isRpcWalletConnected()) {
+                this.btnConnect.caption = connected ? "Switch Network" : "Connect Wallet";
+                this.btnConnect.visible = true;
+                this.btnConnect.enabled = true;
+                this.btnApprove.visible = false;
+                this.btnConfirm.visible = false;
+            } else {
+                this.btnConnect.visible = false;
+                this.btnConnect.enabled = false;
+            }
+            try {
+                if (connected) {
+                    this.minStakePeriod = await getMinStakePeriod(this.state);
+                    const govState = await getGovState(this.state);
+                    this.freezedStake = {
+                        amount: govState.freezeStakeAmount,
+                        lockTill: govState.lockTill,
+                        timestamp: govState.freezeStakeTimestamp
+                    }
+                    this.stakedBalance = govState.stakedBalance;
+                    this.votingBalance = govState.votingBalance;
+                    this.availableStake = `${moment(govState.lockTill).format('DD MMM YYYY')} at ${moment(govState.lockTill).format(
+                        'HH:mm',
+                    )}`;
+                    this.lblStakedBalance.caption = FormatUtils.formatNumberWithSeparators(this.stakedBalance);
+                    this.lblVotingBalance.caption = FormatUtils.formatNumberWithSeparators(this.votingBalance);
+                }
+            } catch (err) {
+                console.log(err)
+            }
+            this.updateAddStakePanel();
         });
     }
 
@@ -305,43 +370,66 @@ export default class ScomGovernanceStaking extends Module {
     }
 
     private handleChangeAction(source: Control) {
+        this.tokenSelection.value = null;
+        this.action = ((source as ComboBox).selectedItem as IComboItem).value as ActionType;
+        this.lblBalance.caption = `Balance: ${FormatUtils.formatNumberWithSeparators(this.balance)}`;
+        this.updateAddStakePanel();
+    }
+
+    private handleConfirm = async () => {
+        const callback = async (err: Error, receipt?: string) => {
+            if (err) {
+                this.showResultMessage('error', err);
+            } else if (receipt) {
+                this.showResultMessage('success', receipt);
+                // this.confirmBtn.rightIcon.spin = true;
+                // this.confirmBtn.rightIcon.visible = true;
+            }
+        };
+
+        const confirmationCallback = async (receipt: any) => {
+            // this.confirmBtn.rightIcon.visible = false;
+        };
+
+        // registerSendTxEvents({
+        //     transactionHash: callback,
+        //     confirmation: confirmationCallback
+        // });
+        await this.handleStake();
+    }
+
+    async handleStake() {
+    }
+
+    private onApproveToken = async () => {
+        this.showResultMessage('warning', 'Approving');
+        //   this.approvalModelAction.doApproveAction(tokenStore.govToken, this.tokenSelection.value);
     }
 
     onInputTextChange(source: Control) {
         const val = (source as Input).value;
         if (val && val < 0) {
-            this.inputElm.value = null
+            this.tokenSelection.value = null
         }
-        //   this.renderAddStake();
-        //   this.approvalModelAction.checkAllowance(tokenStore.govToken, this.inputElm.value);
+        this.updateAddStakePanel();
+        //   this.approvalModelAction.checkAllowance(tokenStore.govToken, this.tokenSelection.value);
     }
 
     private setMaxBalance() {
-      this.inputElm.value = this.balance;
-      this.renderAddStake();
-    //   this.approvalModelAction.checkAllowance(tokenStore.govToken, this.inputElm.value);
+        this.tokenSelection.value = this.balance;
+        this.updateAddStakePanel();
+        //   this.approvalModelAction.checkAllowance(tokenStore.govToken, this.tokenSelection.value);
     }
 
-    private renderAddStake() {
-        this.pnlAddStake.clearInnerHTML();
-        if (!isClientWalletConnected()) return;
-        const font = { size: '0.875rem', color: Theme.text.third };
-        this.pnlAddStake.appendChild(
-            <i-vstack class="none-select" gap="10px">
-                <i-label caption={`${this.action === 'add' ? 'Add' : 'Remove'} Stake`} font={{ color: Theme.text.third }}></i-label>
-                <i-hstack horizontalAlignment="space-between" verticalAlignment="center">
-                    <i-hstack opacity={0.75} gap="0.5rem">
-                        <i-label caption="Staked Balance" font={font}></i-label>
-                        <i-icon
-                            name="question-circle"
-                            fill="#fff" width={14} height={14}
-                            tooltip={{ content: 'Your locked staked. Cannot be used for voting at governance portal.', placement: 'right' }}
-                        ></i-icon>
-                    </i-hstack>
-                    <i-label caption={FormatUtils.formatNumberWithSeparators(this.totalStakedBalance, 4)} font={font}></i-label>
-                </i-hstack>
-            </i-vstack>
-        )
+    private updateAddStakePanel() {
+        this.lblAddStake.caption = this.action === "add" ? "Add Stake" : "Remove Stake";
+        this.lblTotalStakedBalance.caption = FormatUtils.formatNumberWithSeparators(this.totalStakedBalance);
+        this.lblTotalVotingBalance.caption = FormatUtils.formatNumberWithSeparators(this.totalVotingBalance);
+        this.iconAvailableOn.tooltip.content = "Available on " + this.lastAvailableOn;
+        this.lblAvailableOn.caption = this.lastAvailableOn;
+        this.pnlAddStake.visible = isClientWalletConnected();
+        this.btnApprove.enabled = !this.isBtnDisabled;
+        this.btnConfirm.enabled = !this.isBtnDisabled;
     }
 
     render() {
@@ -406,12 +494,15 @@ export default class ScomGovernanceStaking extends Module {
                             >
                                 <i-vstack gap="1rem" width="100%">
                                     <i-hstack verticalAlignment="center" horizontalAlignment="space-between">
+                                        <i-label caption="Input"></i-label>
+                                        <i-label id="lblBalance" caption="Balance: 0"></i-label>
+                                    </i-hstack>
+                                    <i-hstack verticalAlignment="center" horizontalAlignment="space-between">
                                         <i-scom-token-input
                                             id="tokenSelection"
                                             class="custom-token-selection"
                                             width="100%"
-                                            title={<i-label margin={{ bottom: '0.5rem' }} caption="Input"></i-label>}
-                                            isBalanceShown={true}
+                                            isBalanceShown={false}
                                             isBtnMaxShown={true}
                                             isInputShown={true}
                                             tokenReadOnly={true}
@@ -425,10 +516,94 @@ export default class ScomGovernanceStaking extends Module {
                         </i-vstack>
                         <i-vstack
                             id="pnlAddStake"
-                            padding={{ left: '2.5rem', right: '2.5rem', top: '1rem' }}
-                            maxWidth={440} margin={{ left: 'auto', right: 'auto' }}
+                            padding={{ top: '1rem', bottom: '1rem', left: '1rem', right: '1rem' }}
+                            maxWidth={440}
+                            margin={{ left: 'auto', right: 'auto' }}
                             visible={false}
-                        ></i-vstack>
+                        >
+                            <i-vstack class="none-select" gap="10px">
+                                <i-label id="lblAddStake" caption="Add Stake" font={{ size: '1rem', color: Theme.text.third }}></i-label>
+                                <i-hstack horizontalAlignment="space-between" verticalAlignment="center">
+                                    <i-hstack opacity={0.75} gap="0.5rem">
+                                        <i-label caption="Staked Balance" font={{ size: '0.875rem', color: Theme.text.third }}></i-label>
+                                        <i-icon
+                                            name="question-circle"
+                                            fill="#fff" width={14} height={14}
+                                            tooltip={{ content: 'Your locked staked. Cannot be used for voting at governance portal.', placement: 'right' }}
+                                        ></i-icon>
+                                    </i-hstack>
+                                    <i-label id="lblTotalStakedBalance" caption="0" font={{ size: '0.875rem', color: Theme.text.third }}></i-label>
+                                </i-hstack>
+                                <i-hstack horizontalAlignment="space-between" verticalAlignment="center">
+                                    <i-hstack opacity={0.75} gap="0.5rem">
+                                        <i-label caption="Voting Balance" font={{ size: '0.875rem', color: Theme.text.third }}></i-label>
+                                        <i-icon
+                                            name="question-circle"
+                                            fill="#fff" width={14} height={14}
+                                            tooltip={{ content: 'Voting balance allows use to participate at governance portal.', placement: 'right' }}
+                                        ></i-icon>
+                                    </i-hstack>
+                                    <i-label id="lblTotalVotingBalance" caption="0" font={{ size: '0.875rem', color: Theme.text.third }}></i-label>
+                                </i-hstack>
+                                <i-hstack horizontalAlignment="space-between" verticalAlignment="center">
+                                    <i-hstack opacity={0.75} gap="0.5rem">
+                                        <i-label caption="Available on" font={{ size: '0.875rem', color: Theme.text.third }}></i-label>
+                                        <i-icon
+                                            id="iconAvailableOn"
+                                            name="question-circle"
+                                            fill="#fff" width={14} height={14}
+                                            tooltip={{ content: "Available on", placement: 'right' }}
+                                        ></i-icon>
+                                    </i-hstack>
+                                    <i-label id="lblAvailableOn" caption="-" font={{ size: '0.875rem', color: Theme.text.third }}></i-label>
+                                </i-hstack>
+                            </i-vstack>
+                        </i-vstack>
+                        <i-vstack
+                            class="none-select"
+                            padding={{ top: '1rem', bottom: '1rem', left: '1rem', right: '1rem' }}
+                            maxWidth={440}
+                            margin={{ left: 'auto', right: 'auto' }}
+                        >
+                            <i-hstack gap="0.5rem">
+                                <i-button
+                                    id="btnApprove"
+                                    caption="Approve"
+                                    height="auto" width="100%"
+                                    padding={{ top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }}
+                                    border={{ radius: 5 }}
+                                    font={{ weight: 600 }}
+                                    rightIcon={{ spin: true, visible: false }}
+                                    class="btn-os"
+                                    enabled={false}
+                                    visible={false}
+                                    onClick={this.onApproveToken.bind(this)}
+                                ></i-button>
+                                <i-button
+                                    id="btnConfirm"
+                                    caption={this.action === 'add' ? 'Add' : 'Remove'}
+                                    height="auto" width="100%"
+                                    padding={{ top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }}
+                                    border={{ radius: 5 }}
+                                    font={{ weight: 600 }}
+                                    rightIcon={{ spin: true, visible: false }}
+                                    enabled={false}
+                                    visible={false}
+                                    class="btn-os"
+                                    onClick={this.handleConfirm.bind(this)}
+                                ></i-button>
+                                <i-button
+                                    id="btnConnect"
+                                    caption="Connect Wallet"
+                                    enabled={false}
+                                    visible={false}
+                                    width="100%"
+                                    padding={{ top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }}
+                                    class="btn-os"
+                                    onClick={this.connectWallet.bind(this)}
+                                ></i-button>
+                            </i-hstack>
+                        </i-vstack>
                     </i-panel>
                     <i-scom-tx-status-modal id="txStatusModal" />
                     <i-scom-wallet-modal id="mdWallet" wallets={[]} />

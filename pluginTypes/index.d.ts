@@ -86,6 +86,18 @@ declare module "@scom/scom-governance-staking/index.css.ts" {
     const _default_2: string;
     export default _default_2;
 }
+/// <amd-module name="@scom/scom-governance-staking/api.ts" />
+declare module "@scom/scom-governance-staking/api.ts" {
+    import { State } from "@scom/scom-governance-staking/store/index.ts";
+    export function getMinStakePeriod(state: State): Promise<number>;
+    export function getGovState(state: State): Promise<{
+        stakedBalance: number;
+        lockTill: any;
+        votingBalance: number;
+        freezeStakeAmount: any;
+        freezeStakeTimestamp: any;
+    }>;
+}
 /// <amd-module name="@scom/scom-governance-staking" />
 declare module "@scom/scom-governance-staking" {
     import { Control, ControlElement, Module } from '@ijstech/components';
@@ -114,9 +126,16 @@ declare module "@scom/scom-governance-staking" {
         private pnlLock;
         private comboAction;
         private lblBalance;
-        private inputElm;
         private tokenSelection;
         private pnlAddStake;
+        private lblAddStake;
+        private lblTotalStakedBalance;
+        private lblTotalVotingBalance;
+        private iconAvailableOn;
+        private lblAvailableOn;
+        private btnApprove;
+        private btnConfirm;
+        private btnConnect;
         private txStatusModal;
         private mdWallet;
         private state;
@@ -126,6 +145,8 @@ declare module "@scom/scom-governance-staking" {
         private votingBalance;
         private availableStake;
         private action;
+        private freezedStake;
+        private minStakePeriod;
         private get chainId();
         get defaultChainId(): number;
         set defaultChainId(value: number);
@@ -136,8 +157,11 @@ declare module "@scom/scom-governance-staking" {
         get showHeader(): boolean;
         set showHeader(value: boolean);
         private get totalStakedBalance();
+        private get totalVotingBalance();
         private get govTokenAddress();
         private get OAXWalletBalance();
+        private get lastAvailableOn();
+        get isBtnDisabled(): boolean;
         get balance(): string;
         removeRpcWalletEvents(): void;
         onHide(): void;
@@ -158,9 +182,12 @@ declare module "@scom/scom-governance-staking" {
         private showResultMessage;
         private connectWallet;
         private handleChangeAction;
+        private handleConfirm;
+        handleStake(): Promise<void>;
+        private onApproveToken;
         onInputTextChange(source: Control): void;
         private setMaxBalance;
-        private renderAddStake;
+        private updateAddStakePanel;
         render(): any;
     }
 }

@@ -13,6 +13,7 @@
         "@ijstech/eth-wallet",
         "@scom/scom-token-list",
         "@scom/scom-token-modal",
-        "@scom/scom-token-input"
+        "@scom/scom-token-input",
+        "@scom/oswap-openswap-contract"
     ]
 }
