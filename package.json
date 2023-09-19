@@ -1,5 +1,5 @@
 {
-  "name": "scom-governance-staking",
+  "name": "@scom/scom-governance-staking",
   "author": "",
   "version": "0.1.0",
   "main": "dist/index.js",
