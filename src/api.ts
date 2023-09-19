@@ -2,9 +2,21 @@ import { BigNumber, Utils, Wallet } from "@ijstech/eth-wallet";
 import { Contracts } from "@scom/oswap-openswap-contract";
 import { State } from "./store/index";
 
-async function doStakeToGov(wallet: Wallet, gov: string, govTokenDecimals: number, amount: BigNumber) {
+async function doStake(wallet:Wallet, gov:string, govTokenDecimals:number, amount:BigNumber) {
     const govContract = new Contracts.OAXDEX_Governance(wallet, gov);
     const receipt = await govContract.stake(amount.shiftedBy(govTokenDecimals));
+    return receipt;
+}
+
+async function doUnstake(wallet:Wallet, gov:string, govTokenDecimals:number, amount:BigNumber) {
+    const govContract = new Contracts.OAXDEX_Governance(wallet, gov);
+    const receipt = await govContract.unstake(amount.shiftedBy(govTokenDecimals));
+    return receipt;
+}
+
+async function doUnlockStake(wallet:Wallet, gov:string) {
+    const govContract = new Contracts.OAXDEX_Governance(wallet, gov);
+    const receipt = await govContract.unlockStake();
     return receipt;
 }
 
