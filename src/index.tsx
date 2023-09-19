@@ -25,9 +25,9 @@ import ScomTxStatusModal from '@scom/scom-tx-status-modal';
 import { isClientWalletConnected, State } from './store/index';
 import configData from './data.json';
 import { IGovernanceStaking } from './interface';
-import { BigNumber, Constants, Wallet } from '@ijstech/eth-wallet';
+import { BigNumber, Constants, IERC20ApprovalAction, Wallet } from '@ijstech/eth-wallet';
 import customStyles from './index.css';
-import { tokenStore } from '@scom/scom-token-list';
+import { ITokenObject, tokenStore } from '@scom/scom-token-list';
 import ScomTokenInput from '@scom/scom-token-input';
 import { getGovState, getMinStakePeriod } from './api';
 
@@ -96,6 +96,7 @@ export default class ScomGovernanceStaking extends Module {
     private freezedStake: any = {};
     private minStakePeriod: number = 0;
     private allTokenBalancesMap: any;
+    private approvalModelAction: IERC20ApprovalAction;
 
     private get chainId() {
         return this.state.getChainId();
@@ -238,6 +239,8 @@ export default class ScomGovernanceStaking extends Module {
     private async setData(data: IGovernanceStaking) {
         this._data = data;
         this.resetRpcWallet();
+        if (!this.approvalModelAction) this.initApprovalModelAction();
+        this.setApprovalSpenderAddress();
         await this.refreshUI();
     }
 
@@ -272,9 +275,11 @@ export default class ScomGovernanceStaking extends Module {
         const rpcWalletId = this.state.initRpcWallet(this.defaultChainId);
         const rpcWallet = this.state.getRpcWallet();
         const chainChangedEvent = rpcWallet.registerWalletEvent(this, Constants.RpcWalletEvent.ChainChanged, async (chainId: number) => {
+            this.setApprovalSpenderAddress();
             this.refreshUI();
         });
         const connectedEvent = rpcWallet.registerWalletEvent(this, Constants.RpcWalletEvent.Connected, async (connected: boolean) => {
+            this.setApprovalSpenderAddress();
             this.refreshUI();
         });
         if (rpcWallet.instanceId) {
@@ -309,6 +314,8 @@ export default class ScomGovernanceStaking extends Module {
             await this.initWallet();
             await this.updateBalance();
             this.tokenSelection.token = this.state.getGovToken(chainId);
+            const token = this.state.getGovToken(this.chainId);
+            await this.approvalModelAction.checkAllowance(token, this.tokenSelection.value);
             const connected = isClientWalletConnected();
             if (!connected || !this.state.isRpcWalletConnected()) {
                 this.btnConnect.caption = connected ? "Switch Network" : "Connect Wallet";
@@ -343,6 +350,59 @@ export default class ScomGovernanceStaking extends Module {
             this.lblBalance.caption = `Balance: ${FormatUtils.formatNumberWithSeparators(this.balance, 4)}`;
             this.updateAddStakePanel();
         });
+    }
+
+    private async initApprovalModelAction() {
+        this.approvalModelAction = await this.state.setApprovalModelAction({
+            sender: this,
+            payAction: this.handleConfirm,
+            onToBeApproved: async (token: ITokenObject) => {
+                this.btnApprove.visible = true;
+                this.btnApprove.enabled = true;
+                this.btnConfirm.visible = false;
+            },
+            onToBePaid: async (token: ITokenObject) => {
+                this.btnApprove.visible = false;
+                this.btnConfirm.visible = true;
+                this.btnConfirm.enabled = !this.isBtnDisabled;
+            },
+            onApproving: async (token: ITokenObject, receipt?: string) => {
+                this.btnApprove.rightIcon.spin = true;
+                this.btnApprove.rightIcon.visible = true;
+                this.btnApprove.caption = `Approving ${token.symbol}`;
+                if (receipt)
+                    this.showResultMessage('success', receipt);
+            },
+            onApproved: async (token: ITokenObject) => {
+                this.btnApprove.rightIcon.visible = false;
+                this.btnApprove.caption = 'Approve';
+            },
+            onApprovingError: async (token: ITokenObject, err: Error) => {
+                this.showResultMessage('error', err);
+                this.btnApprove.caption = 'Approve';
+                this.btnApprove.rightIcon.visible = false;
+            },
+            onPaying: async (receipt?: string) => {
+                if (receipt) {
+                    this.showResultMessage('success', receipt);
+                    this.tokenSelection.value = '0';
+                    this.btnConfirm.enabled = false;
+                    this.btnConfirm.rightIcon.visible = true;
+                }
+            },
+            onPaid: async () => {
+                this.btnConfirm.rightIcon.visible = false;
+                this.tokenSelection.value = '0';
+            },
+            onPayingError: async (err: Error) => {
+                this.showResultMessage('error', err);
+            }
+        });
+    }
+
+    private setApprovalSpenderAddress() {
+        if (!this.state.approvalModel) return;
+        this.state.approvalModel.spenderAddress = this.state.getAddresses().OAXDEX_Governance;
     }
 
     private showResultMessage = (status: 'warning' | 'success' | 'error', content?: string | Error) => {
@@ -380,7 +440,7 @@ export default class ScomGovernanceStaking extends Module {
             let tokenBalances = tokenStore.getTokenBalancesByChainId(this.chainId);
             this.allTokenBalancesMap = tokenBalances || {};
         } else {
-          this.allTokenBalancesMap = {};
+            this.allTokenBalancesMap = {};
         }
     }
 
@@ -418,7 +478,8 @@ export default class ScomGovernanceStaking extends Module {
 
     private onApproveToken = async () => {
         this.showResultMessage('warning', 'Approving');
-        //   this.approvalModelAction.doApproveAction(tokenStore.govToken, this.tokenSelection.value);
+        const token = this.state.getGovToken(this.chainId);
+        this.approvalModelAction.doApproveAction(token, this.tokenSelection.value);
     }
 
     onInputAmountChanged(source: Control) {
@@ -427,13 +488,15 @@ export default class ScomGovernanceStaking extends Module {
             this.tokenSelection.value = null
         }
         this.updateAddStakePanel();
-        //   this.approvalModelAction.checkAllowance(tokenStore.govToken, this.tokenSelection.value);
+        const token = this.state.getGovToken(this.chainId);
+        this.approvalModelAction.checkAllowance(token, this.tokenSelection.value);
     }
 
     private setMaxBalance() {
         this.tokenSelection.value = this.balance;
         this.updateAddStakePanel();
-        //   this.approvalModelAction.checkAllowance(tokenStore.govToken, this.tokenSelection.value);
+        const token = this.state.getGovToken(this.chainId);
+        this.approvalModelAction.checkAllowance(token, this.tokenSelection.value);
     }
 
     private updateAddStakePanel() {
@@ -443,6 +506,7 @@ export default class ScomGovernanceStaking extends Module {
         this.iconAvailableOn.tooltip.content = "Available on " + this.lastAvailableOn;
         this.lblAvailableOn.caption = this.lastAvailableOn;
         this.pnlAddStake.visible = isClientWalletConnected();
+        this.btnConfirm.caption = this.action === 'add' ? 'Add' : 'Remove';
         this.btnApprove.enabled = !this.isBtnDisabled;
         this.btnConfirm.enabled = !this.isBtnDisabled;
     }
@@ -597,7 +661,7 @@ export default class ScomGovernanceStaking extends Module {
                                 ></i-button>
                                 <i-button
                                     id="btnConfirm"
-                                    caption={this.action === 'add' ? 'Add' : 'Remove'}
+                                    caption='Add'
                                     height="auto" width="100%"
                                     padding={{ top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }}
                                     border={{ radius: 5 }}

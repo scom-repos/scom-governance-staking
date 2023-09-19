@@ -1,5 +1,5 @@
 import { application } from "@ijstech/components";
-import { BigNumber, INetwork, Wallet } from "@ijstech/eth-wallet";
+import { BigNumber, ERC20ApprovalModel, IERC20ApprovalEventOptions, INetwork, Wallet } from "@ijstech/eth-wallet";
 import getNetworkList from "@scom/scom-network-list";
 import { ITokenObject, WETHByChainId } from "@scom/scom-token-list";
 import { coreAddress } from "./core";
@@ -8,6 +8,7 @@ export class State {
   infuraId: string = '';
   networkMap: { [key: number]: INetwork } = {};
   rpcWalletId: string = '';
+  approvalModel: ERC20ApprovalModel;
 
   constructor(options: any) {
     this.networkMap = getNetworkList();
@@ -79,6 +80,17 @@ export class State {
       };
       wallet.setNetworkInfo(this.networkMap[network.chainId]);
     }
+  }
+
+  async setApprovalModelAction(options: IERC20ApprovalEventOptions) {
+    const approvalOptions = {
+      ...options,
+      spenderAddress: ''
+    };
+    let wallet = this.getRpcWallet();
+    this.approvalModel = new ERC20ApprovalModel(wallet, approvalOptions);
+    let approvalModelAction = this.approvalModel.getAction();
+    return approvalModelAction;
   }
 
   getAddresses(chainId?: number) {

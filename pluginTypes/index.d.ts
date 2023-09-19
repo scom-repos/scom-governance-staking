@@ -22,7 +22,7 @@ declare module "@scom/scom-governance-staking/store/core.ts" {
 }
 /// <amd-module name="@scom/scom-governance-staking/store/utils.ts" />
 declare module "@scom/scom-governance-staking/store/utils.ts" {
-    import { INetwork } from "@ijstech/eth-wallet";
+    import { ERC20ApprovalModel, IERC20ApprovalEventOptions, INetwork } from "@ijstech/eth-wallet";
     import { ITokenObject } from "@scom/scom-token-list";
     export class State {
         infuraId: string;
@@ -30,6 +30,7 @@ declare module "@scom/scom-governance-staking/store/utils.ts" {
             [key: number]: INetwork;
         };
         rpcWalletId: string;
+        approvalModel: ERC20ApprovalModel;
         constructor(options: any);
         private initData;
         initRpcWallet(defaultChainId: number): string;
@@ -37,6 +38,7 @@ declare module "@scom/scom-governance-staking/store/utils.ts" {
         isRpcWalletConnected(): boolean;
         getChainId(): number;
         private setNetworkList;
+        setApprovalModelAction(options: IERC20ApprovalEventOptions): Promise<import("@ijstech/eth-wallet").IERC20ApprovalAction>;
         getAddresses(chainId?: number): import("@scom/scom-governance-staking/store/core.ts").CoreAddress;
         getGovToken(chainId: number): ITokenObject;
     }
@@ -148,6 +150,7 @@ declare module "@scom/scom-governance-staking" {
         private freezedStake;
         private minStakePeriod;
         private allTokenBalancesMap;
+        private approvalModelAction;
         private get chainId();
         get defaultChainId(): number;
         set defaultChainId(value: number);
@@ -179,6 +182,8 @@ declare module "@scom/scom-governance-staking" {
         private refreshUI;
         private initWallet;
         private initializeWidgetConfig;
+        private initApprovalModelAction;
+        private setApprovalSpenderAddress;
         private showResultMessage;
         private connectWallet;
         private updateBalance;
