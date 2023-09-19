@@ -61,7 +61,7 @@ export default class Module1 extends Module {
                 <i-hstack id="mainStack" margin={{ top: '1rem', left: '1rem' }} gap="2rem">
                     <i-scom-governance-staking
                         width={600}
-                        defaultChainId={43113}
+                        defaultChainId={97}
                         networks={[
                             {
                                 "chainId": 43113

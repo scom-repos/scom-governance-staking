@@ -241,6 +241,9 @@ export default class ScomGovernanceStaking extends Module {
         const connectedEvent = rpcWallet.registerWalletEvent(this, Constants.RpcWalletEvent.Connected, async (connected: boolean) => {
             this.refreshUI();
         });
+        if (rpcWallet.instanceId) {
+            if (this.tokenSelection) this.tokenSelection.rpcWalletId = rpcWallet.instanceId;
+        }
         const data: any = {
             defaultChainId: this.defaultChainId,
             wallets: this.wallets,
@@ -266,7 +269,9 @@ export default class ScomGovernanceStaking extends Module {
     }
     private initializeWidgetConfig = async () => {
         setTimeout(async () => {
+            const chainId = this.chainId;
             await this.initWallet();
+            this.tokenSelection.token = this.state.getGovToken(chainId);
         });
     }
 
@@ -306,11 +311,17 @@ export default class ScomGovernanceStaking extends Module {
         if (val && val < 0) {
             this.inputElm.value = null
         }
-        //   this.renderAddStack();
+        //   this.renderAddStake();
         //   this.approvalModelAction.checkAllowance(tokenStore.govToken, this.inputElm.value);
     }
 
-    private renderAddStack() {
+    private setMaxBalance() {
+      this.inputElm.value = this.balance;
+      this.renderAddStake();
+    //   this.approvalModelAction.checkAllowance(tokenStore.govToken, this.inputElm.value);
+    }
+
+    private renderAddStake() {
         this.pnlAddStake.clearInnerHTML();
         if (!isClientWalletConnected()) return;
         const font = { size: '0.875rem', color: Theme.text.third };
@@ -396,8 +407,16 @@ export default class ScomGovernanceStaking extends Module {
                                     <i-hstack verticalAlignment="center" horizontalAlignment="space-between">
                                         <i-scom-token-input
                                             id="tokenSelection"
+                                            class="custom-token-selection"
+                                            width="100%"
                                             title={<i-label margin={{ bottom: '0.5rem' }} caption="Input"></i-label>}
                                             isBalanceShown={true}
+                                            isBtnMaxShown={true}
+                                            isInputShown={true}
+                                            tokenReadOnly={true}
+                                            placeholder="0.0"
+                                            value="0"
+                                            onSetMaxBalance={this.setMaxBalance.bind(this)}
                                         ></i-scom-token-input>
                                     </i-hstack>
                                 </i-vstack>

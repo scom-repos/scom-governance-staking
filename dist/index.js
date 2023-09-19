@@ -271,7 +271,29 @@ define("@scom/scom-governance-staking/index.css.ts", ["require", "exports", "@ij
                         visibility: 'inherit'
                     }
                 }
-            }
+            },
+            '.custom-token-selection #gridTokenInput': {
+                background: 'transparent',
+                padding: '0 !important',
+                $nest: {
+                    '#btnMax': {
+                        background: Theme.background.gradient,
+                        color: '#fff !important',
+                        padding: '1px 8px !important',
+                        borderRadius: 6,
+                        fontSize: '1rem',
+                        fontWeight: 600
+                    },
+                    '#btnToken': {
+                        paddingRight: '0 !important',
+                        opacity: 1
+                    },
+                    '#btnToken i-label': {
+                        color: Theme.text.third,
+                        fontWeight: 700
+                    }
+                }
+            },
         }
     });
 });
@@ -313,7 +335,9 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             };
             this.initializeWidgetConfig = async () => {
                 setTimeout(async () => {
+                    const chainId = this.chainId;
                     await this.initWallet();
+                    this.tokenSelection.token = this.state.getGovToken(chainId);
                 });
             };
             this.showResultMessage = (status, content) => {
@@ -490,6 +514,10 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             const connectedEvent = rpcWallet.registerWalletEvent(this, eth_wallet_2.Constants.RpcWalletEvent.Connected, async (connected) => {
                 this.refreshUI();
             });
+            if (rpcWallet.instanceId) {
+                if (this.tokenSelection)
+                    this.tokenSelection.rpcWalletId = rpcWallet.instanceId;
+            }
             const data = {
                 defaultChainId: this.defaultChainId,
                 wallets: this.wallets,
@@ -510,10 +538,15 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             if (val && val < 0) {
                 this.inputElm.value = null;
             }
-            //   this.renderAddStack();
+            //   this.renderAddStake();
             //   this.approvalModelAction.checkAllowance(tokenStore.govToken, this.inputElm.value);
         }
-        renderAddStack() {
+        setMaxBalance() {
+            this.inputElm.value = this.balance;
+            this.renderAddStake();
+            //   this.approvalModelAction.checkAllowance(tokenStore.govToken, this.inputElm.value);
+        }
+        renderAddStake() {
             this.pnlAddStake.clearInnerHTML();
             if (!(0, index_1.isClientWalletConnected)())
                 return;
@@ -551,7 +584,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                             this.$render("i-vstack", { gap: "1rem", margin: { top: '1rem' }, border: { radius: 10, width: '1px', style: 'solid', color: '#8f8d8d' }, padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' } },
                                 this.$render("i-vstack", { gap: "1rem", width: "100%" },
                                     this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between" },
-                                        this.$render("i-scom-token-input", { id: "tokenSelection", title: this.$render("i-label", { margin: { bottom: '0.5rem' }, caption: "Input" }), isBalanceShown: true }))))),
+                                        this.$render("i-scom-token-input", { id: "tokenSelection", class: "custom-token-selection", width: "100%", title: this.$render("i-label", { margin: { bottom: '0.5rem' }, caption: "Input" }), isBalanceShown: true, isBtnMaxShown: true, isInputShown: true, tokenReadOnly: true, placeholder: "0.0", value: "0", onSetMaxBalance: this.setMaxBalance.bind(this) }))))),
                         this.$render("i-vstack", { id: "pnlAddStake", padding: { left: '2.5rem', right: '2.5rem', top: '1rem' }, maxWidth: 440, margin: { left: 'auto', right: 'auto' }, visible: false })),
                     this.$render("i-scom-tx-status-modal", { id: "txStatusModal" }),
                     this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] }))));

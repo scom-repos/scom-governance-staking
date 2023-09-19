@@ -160,7 +160,8 @@ declare module "@scom/scom-governance-staking" {
         private connectWallet;
         private handleChangeAction;
         onInputTextChange(source: Control): void;
-        private renderAddStack;
+        private setMaxBalance;
+        private renderAddStake;
         render(): any;
     }
 }

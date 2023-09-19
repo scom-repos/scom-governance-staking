@@ -40,6 +40,28 @@ export default Styles.style({
           visibility: 'inherit'
         }
       }
-    }
+    },
+    '.custom-token-selection #gridTokenInput': {
+      background: 'transparent',
+      padding: '0 !important',
+      $nest: {
+        '#btnMax': {
+          background: Theme.background.gradient,
+          color: '#fff !important',
+          padding: '1px 8px !important',
+          borderRadius: 6,
+          fontSize: '1rem',
+          fontWeight: 600
+        },
+        '#btnToken': {
+          paddingRight: '0 !important',
+          opacity: 1
+        },
+        '#btnToken i-label': {
+          color: Theme.text.third,
+          fontWeight: 700
+        }
+      }
+    },
   }
 })
