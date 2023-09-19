@@ -147,6 +147,7 @@ declare module "@scom/scom-governance-staking" {
         private action;
         private freezedStake;
         private minStakePeriod;
+        private allTokenBalancesMap;
         private get chainId();
         get defaultChainId(): number;
         set defaultChainId(value: number);
@@ -158,7 +159,6 @@ declare module "@scom/scom-governance-staking" {
         set showHeader(value: boolean);
         private get totalStakedBalance();
         private get totalVotingBalance();
-        private get govTokenAddress();
         private get OAXWalletBalance();
         private get lastAvailableOn();
         get isBtnDisabled(): boolean;
@@ -181,11 +181,12 @@ declare module "@scom/scom-governance-staking" {
         private initializeWidgetConfig;
         private showResultMessage;
         private connectWallet;
+        private updateBalance;
         private handleChangeAction;
         private handleConfirm;
         handleStake(): Promise<void>;
         private onApproveToken;
-        onInputTextChange(source: Control): void;
+        onInputAmountChanged(source: Control): void;
         private setMaxBalance;
         private updateAddStakePanel;
         render(): any;

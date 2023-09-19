@@ -63,5 +63,10 @@ export default Styles.style({
         }
       }
     },
+    '.balance-label': {
+      textAlign: 'right',
+      textOverflow: 'ellipsis',
+      overflow: 'hidden'
+    }
   }
 })

@@ -95,6 +95,7 @@ export default class ScomGovernanceStaking extends Module {
     private action: ActionType = "add";
     private freezedStake: any = {};
     private minStakePeriod: number = 0;
+    private allTokenBalancesMap: any;
 
     private get chainId() {
         return this.state.getChainId();
@@ -145,13 +146,14 @@ export default class ScomGovernanceStaking extends Module {
         return this.votingBalance.toString();
     }
 
-    private get govTokenAddress() {
-        return this.state.getGovToken(this.chainId)?.address || ''
-    }
-
-    private get OAXWalletBalance(): string {
-        const balances = tokenStore.tokenBalances || [];
-        return balances[this.govTokenAddress.toLowerCase()] || '0';
+    private get OAXWalletBalance(): number {
+        const token = this.state.getGovToken(this.chainId);
+        if (token) {
+            const address = token?.address || "";
+            return address ? this.allTokenBalancesMap[address.toLowerCase()] ?? 0 : this.allTokenBalancesMap[token.symbol] || 0;
+        } else {
+            return 0;
+        }
     }
 
     private get lastAvailableOn() {
@@ -305,6 +307,7 @@ export default class ScomGovernanceStaking extends Module {
         setTimeout(async () => {
             const chainId = this.chainId;
             await this.initWallet();
+            await this.updateBalance();
             this.tokenSelection.token = this.state.getGovToken(chainId);
             const connected = isClientWalletConnected();
             if (!connected || !this.state.isRpcWalletConnected()) {
@@ -331,12 +334,13 @@ export default class ScomGovernanceStaking extends Module {
                     this.availableStake = `${moment(govState.lockTill).format('DD MMM YYYY')} at ${moment(govState.lockTill).format(
                         'HH:mm',
                     )}`;
-                    this.lblStakedBalance.caption = FormatUtils.formatNumberWithSeparators(this.stakedBalance);
-                    this.lblVotingBalance.caption = FormatUtils.formatNumberWithSeparators(this.votingBalance);
+                    this.lblStakedBalance.caption = FormatUtils.formatNumberWithSeparators(this.stakedBalance, 4);
+                    this.lblVotingBalance.caption = FormatUtils.formatNumberWithSeparators(this.votingBalance, 4);
                 }
             } catch (err) {
                 console.log(err)
             }
+            this.lblBalance.caption = `Balance: ${FormatUtils.formatNumberWithSeparators(this.balance, 4)}`;
             this.updateAddStakePanel();
         });
     }
@@ -369,10 +373,21 @@ export default class ScomGovernanceStaking extends Module {
         }
     }
 
+    private async updateBalance() {
+        const rpcWallet = this.state.getRpcWallet();
+        if (rpcWallet.address) {
+            if (!this.isEmptyData(this._data)) await tokenStore.updateAllTokenBalances(rpcWallet);
+            let tokenBalances = tokenStore.getTokenBalancesByChainId(this.chainId);
+            this.allTokenBalancesMap = tokenBalances || {};
+        } else {
+          this.allTokenBalancesMap = {};
+        }
+    }
+
     private handleChangeAction(source: Control) {
         this.tokenSelection.value = null;
         this.action = ((source as ComboBox).selectedItem as IComboItem).value as ActionType;
-        this.lblBalance.caption = `Balance: ${FormatUtils.formatNumberWithSeparators(this.balance)}`;
+        this.lblBalance.caption = `Balance: ${FormatUtils.formatNumberWithSeparators(this.balance, 4)}`;
         this.updateAddStakePanel();
     }
 
@@ -406,7 +421,7 @@ export default class ScomGovernanceStaking extends Module {
         //   this.approvalModelAction.doApproveAction(tokenStore.govToken, this.tokenSelection.value);
     }
 
-    onInputTextChange(source: Control) {
+    onInputAmountChanged(source: Control) {
         const val = (source as Input).value;
         if (val && val < 0) {
             this.tokenSelection.value = null
@@ -423,8 +438,8 @@ export default class ScomGovernanceStaking extends Module {
 
     private updateAddStakePanel() {
         this.lblAddStake.caption = this.action === "add" ? "Add Stake" : "Remove Stake";
-        this.lblTotalStakedBalance.caption = FormatUtils.formatNumberWithSeparators(this.totalStakedBalance);
-        this.lblTotalVotingBalance.caption = FormatUtils.formatNumberWithSeparators(this.totalVotingBalance);
+        this.lblTotalStakedBalance.caption = FormatUtils.formatNumberWithSeparators(this.totalStakedBalance, 4);
+        this.lblTotalVotingBalance.caption = FormatUtils.formatNumberWithSeparators(this.totalVotingBalance, 4);
         this.iconAvailableOn.tooltip.content = "Available on " + this.lastAvailableOn;
         this.lblAvailableOn.caption = this.lastAvailableOn;
         this.pnlAddStake.visible = isClientWalletConnected();
@@ -463,12 +478,12 @@ export default class ScomGovernanceStaking extends Module {
                             <i-vstack gap="0.5rem">
                                 <i-hstack verticalAlignment="center" horizontalAlignment="space-between">
                                     <i-label caption="Staked Balance" font={{ size: "0.875rem" }}></i-label>
-                                    <i-label id="lblStakedBalance" caption="0" font={{ size: "0.875rem" }}></i-label>
+                                    <i-label id="lblStakedBalance" class="balance-label" width="50%" caption="0" font={{ size: "0.875rem" }}></i-label>
                                 </i-hstack>
                                 <i-hstack id="pnlLock" position="relative"></i-hstack>
                                 <i-hstack verticalAlignment="center" horizontalAlignment="space-between">
                                     <i-label caption="Voting Balance" font={{ size: "0.875rem" }}></i-label>
-                                    <i-label id="lblVotingBalance" caption="0" font={{ size: "0.875rem" }}></i-label>
+                                    <i-label id="lblVotingBalance" class="balance-label" width="50%" caption="0" font={{ size: "0.875rem" }}></i-label>
                                 </i-hstack>
                             </i-vstack>
                             <i-hstack verticalAlignment="center" horizontalAlignment="space-between" >
@@ -495,7 +510,7 @@ export default class ScomGovernanceStaking extends Module {
                                 <i-vstack gap="1rem" width="100%">
                                     <i-hstack verticalAlignment="center" horizontalAlignment="space-between">
                                         <i-label caption="Input"></i-label>
-                                        <i-label id="lblBalance" caption="Balance: 0"></i-label>
+                                        <i-label id="lblBalance" class="balance-label" width="50%" caption="Balance: 0"></i-label>
                                     </i-hstack>
                                     <i-hstack verticalAlignment="center" horizontalAlignment="space-between">
                                         <i-scom-token-input
@@ -509,6 +524,7 @@ export default class ScomGovernanceStaking extends Module {
                                             placeholder="0.0"
                                             value="0"
                                             onSetMaxBalance={this.setMaxBalance.bind(this)}
+                                            onInputAmountChanged={this.onInputAmountChanged.bind(this)}
                                         ></i-scom-token-input>
                                     </i-hstack>
                                 </i-vstack>
@@ -532,7 +548,7 @@ export default class ScomGovernanceStaking extends Module {
                                             tooltip={{ content: 'Your locked staked. Cannot be used for voting at governance portal.', placement: 'right' }}
                                         ></i-icon>
                                     </i-hstack>
-                                    <i-label id="lblTotalStakedBalance" caption="0" font={{ size: '0.875rem', color: Theme.text.third }}></i-label>
+                                    <i-label id="lblTotalStakedBalance" class="balance-label" width="50%" caption="0" font={{ size: '0.875rem', color: Theme.text.third }}></i-label>
                                 </i-hstack>
                                 <i-hstack horizontalAlignment="space-between" verticalAlignment="center">
                                     <i-hstack opacity={0.75} gap="0.5rem">
@@ -543,7 +559,7 @@ export default class ScomGovernanceStaking extends Module {
                                             tooltip={{ content: 'Voting balance allows use to participate at governance portal.', placement: 'right' }}
                                         ></i-icon>
                                     </i-hstack>
-                                    <i-label id="lblTotalVotingBalance" caption="0" font={{ size: '0.875rem', color: Theme.text.third }}></i-label>
+                                    <i-label id="lblTotalVotingBalance" class="balance-label" width="50%" caption="0" font={{ size: '0.875rem', color: Theme.text.third }}></i-label>
                                 </i-hstack>
                                 <i-hstack horizontalAlignment="space-between" verticalAlignment="center">
                                     <i-hstack opacity={0.75} gap="0.5rem">

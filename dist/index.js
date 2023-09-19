@@ -267,6 +267,11 @@ define("@scom/scom-governance-staking/index.css.ts", ["require", "exports", "@ij
                     }
                 }
             },
+            '.balance-label': {
+                textAlign: 'right',
+                textOverflow: 'ellipsis',
+                overflow: 'hidden'
+            }
         }
     });
 });
@@ -374,6 +379,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 setTimeout(async () => {
                     const chainId = this.chainId;
                     await this.initWallet();
+                    await this.updateBalance();
                     this.tokenSelection.token = this.state.getGovToken(chainId);
                     const connected = (0, index_1.isClientWalletConnected)();
                     if (!connected || !this.state.isRpcWalletConnected()) {
@@ -399,13 +405,14 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                             this.stakedBalance = govState.stakedBalance;
                             this.votingBalance = govState.votingBalance;
                             this.availableStake = `${(0, components_4.moment)(govState.lockTill).format('DD MMM YYYY')} at ${(0, components_4.moment)(govState.lockTill).format('HH:mm')}`;
-                            this.lblStakedBalance.caption = components_4.FormatUtils.formatNumberWithSeparators(this.stakedBalance);
-                            this.lblVotingBalance.caption = components_4.FormatUtils.formatNumberWithSeparators(this.votingBalance);
+                            this.lblStakedBalance.caption = components_4.FormatUtils.formatNumberWithSeparators(this.stakedBalance, 4);
+                            this.lblVotingBalance.caption = components_4.FormatUtils.formatNumberWithSeparators(this.votingBalance, 4);
                         }
                     }
                     catch (err) {
                         console.log(err);
                     }
+                    this.lblBalance.caption = `Balance: ${components_4.FormatUtils.formatNumberWithSeparators(this.balance, 4)}`;
                     this.updateAddStakePanel();
                 });
             };
@@ -507,13 +514,16 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 return this.totalStakedBalance;
             return this.votingBalance.toString();
         }
-        get govTokenAddress() {
-            var _a;
-            return ((_a = this.state.getGovToken(this.chainId)) === null || _a === void 0 ? void 0 : _a.address) || '';
-        }
         get OAXWalletBalance() {
-            const balances = scom_token_list_2.tokenStore.tokenBalances || [];
-            return balances[this.govTokenAddress.toLowerCase()] || '0';
+            var _a;
+            const token = this.state.getGovToken(this.chainId);
+            if (token) {
+                const address = (token === null || token === void 0 ? void 0 : token.address) || "";
+                return address ? (_a = this.allTokenBalancesMap[address.toLowerCase()]) !== null && _a !== void 0 ? _a : 0 : this.allTokenBalancesMap[token.symbol] || 0;
+            }
+            else {
+                return 0;
+            }
         }
         get lastAvailableOn() {
             return (0, components_4.moment)(new Date())
@@ -641,15 +651,27 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
         async refreshUI() {
             await this.initializeWidgetConfig();
         }
+        async updateBalance() {
+            const rpcWallet = this.state.getRpcWallet();
+            if (rpcWallet.address) {
+                if (!this.isEmptyData(this._data))
+                    await scom_token_list_2.tokenStore.updateAllTokenBalances(rpcWallet);
+                let tokenBalances = scom_token_list_2.tokenStore.getTokenBalancesByChainId(this.chainId);
+                this.allTokenBalancesMap = tokenBalances || {};
+            }
+            else {
+                this.allTokenBalancesMap = {};
+            }
+        }
         handleChangeAction(source) {
             this.tokenSelection.value = null;
             this.action = source.selectedItem.value;
-            this.lblBalance.caption = `Balance: ${components_4.FormatUtils.formatNumberWithSeparators(this.balance)}`;
+            this.lblBalance.caption = `Balance: ${components_4.FormatUtils.formatNumberWithSeparators(this.balance, 4)}`;
             this.updateAddStakePanel();
         }
         async handleStake() {
         }
-        onInputTextChange(source) {
+        onInputAmountChanged(source) {
             const val = source.value;
             if (val && val < 0) {
                 this.tokenSelection.value = null;
@@ -664,8 +686,8 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
         }
         updateAddStakePanel() {
             this.lblAddStake.caption = this.action === "add" ? "Add Stake" : "Remove Stake";
-            this.lblTotalStakedBalance.caption = components_4.FormatUtils.formatNumberWithSeparators(this.totalStakedBalance);
-            this.lblTotalVotingBalance.caption = components_4.FormatUtils.formatNumberWithSeparators(this.totalVotingBalance);
+            this.lblTotalStakedBalance.caption = components_4.FormatUtils.formatNumberWithSeparators(this.totalStakedBalance, 4);
+            this.lblTotalVotingBalance.caption = components_4.FormatUtils.formatNumberWithSeparators(this.totalVotingBalance, 4);
             this.iconAvailableOn.tooltip.content = "Available on " + this.lastAvailableOn;
             this.lblAvailableOn.caption = this.lastAvailableOn;
             this.pnlAddStake.visible = (0, index_1.isClientWalletConnected)();
@@ -686,11 +708,11 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                             this.$render("i-vstack", { gap: "0.5rem" },
                                 this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between" },
                                     this.$render("i-label", { caption: "Staked Balance", font: { size: "0.875rem" } }),
-                                    this.$render("i-label", { id: "lblStakedBalance", caption: "0", font: { size: "0.875rem" } })),
+                                    this.$render("i-label", { id: "lblStakedBalance", class: "balance-label", width: "50%", caption: "0", font: { size: "0.875rem" } })),
                                 this.$render("i-hstack", { id: "pnlLock", position: "relative" }),
                                 this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between" },
                                     this.$render("i-label", { caption: "Voting Balance", font: { size: "0.875rem" } }),
-                                    this.$render("i-label", { id: "lblVotingBalance", caption: "0", font: { size: "0.875rem" } }))),
+                                    this.$render("i-label", { id: "lblVotingBalance", class: "balance-label", width: "50%", caption: "0", font: { size: "0.875rem" } }))),
                             this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between" },
                                 this.$render("i-label", { caption: "Action", font: { size: '0.875rem' } }),
                                 this.$render("i-combo-box", { id: "comboAction", placeholder: "Please select action", items: actionOptions, selectedItem: actionOptions[0], background: { color: Theme.background.gradient }, height: 32, minWidth: 180, border: { radius: 10 }, icon: { name: "angle-down", fill: '#fff', width: 12, height: 12 }, font: { size: '0.875rem' }, enabled: true, onChanged: this.handleChangeAction.bind(this), class: "custom-combobox" })),
@@ -698,9 +720,9 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                                 this.$render("i-vstack", { gap: "1rem", width: "100%" },
                                     this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between" },
                                         this.$render("i-label", { caption: "Input" }),
-                                        this.$render("i-label", { id: "lblBalance", caption: "Balance: 0" })),
+                                        this.$render("i-label", { id: "lblBalance", class: "balance-label", width: "50%", caption: "Balance: 0" })),
                                     this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between" },
-                                        this.$render("i-scom-token-input", { id: "tokenSelection", class: "custom-token-selection", width: "100%", isBalanceShown: false, isBtnMaxShown: true, isInputShown: true, tokenReadOnly: true, placeholder: "0.0", value: "0", onSetMaxBalance: this.setMaxBalance.bind(this) }))))),
+                                        this.$render("i-scom-token-input", { id: "tokenSelection", class: "custom-token-selection", width: "100%", isBalanceShown: false, isBtnMaxShown: true, isInputShown: true, tokenReadOnly: true, placeholder: "0.0", value: "0", onSetMaxBalance: this.setMaxBalance.bind(this), onInputAmountChanged: this.onInputAmountChanged.bind(this) }))))),
                         this.$render("i-vstack", { id: "pnlAddStake", padding: { top: '1rem', bottom: '1rem', left: '1rem', right: '1rem' }, maxWidth: 440, margin: { left: 'auto', right: 'auto' }, visible: false },
                             this.$render("i-vstack", { class: "none-select", gap: "10px" },
                                 this.$render("i-label", { id: "lblAddStake", caption: "Add Stake", font: { size: '1rem', color: Theme.text.third } }),
@@ -708,12 +730,12 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                                     this.$render("i-hstack", { opacity: 0.75, gap: "0.5rem" },
                                         this.$render("i-label", { caption: "Staked Balance", font: { size: '0.875rem', color: Theme.text.third } }),
                                         this.$render("i-icon", { name: "question-circle", fill: "#fff", width: 14, height: 14, tooltip: { content: 'Your locked staked. Cannot be used for voting at governance portal.', placement: 'right' } })),
-                                    this.$render("i-label", { id: "lblTotalStakedBalance", caption: "0", font: { size: '0.875rem', color: Theme.text.third } })),
+                                    this.$render("i-label", { id: "lblTotalStakedBalance", class: "balance-label", width: "50%", caption: "0", font: { size: '0.875rem', color: Theme.text.third } })),
                                 this.$render("i-hstack", { horizontalAlignment: "space-between", verticalAlignment: "center" },
                                     this.$render("i-hstack", { opacity: 0.75, gap: "0.5rem" },
                                         this.$render("i-label", { caption: "Voting Balance", font: { size: '0.875rem', color: Theme.text.third } }),
                                         this.$render("i-icon", { name: "question-circle", fill: "#fff", width: 14, height: 14, tooltip: { content: 'Voting balance allows use to participate at governance portal.', placement: 'right' } })),
-                                    this.$render("i-label", { id: "lblTotalVotingBalance", caption: "0", font: { size: '0.875rem', color: Theme.text.third } })),
+                                    this.$render("i-label", { id: "lblTotalVotingBalance", class: "balance-label", width: "50%", caption: "0", font: { size: '0.875rem', color: Theme.text.third } })),
                                 this.$render("i-hstack", { horizontalAlignment: "space-between", verticalAlignment: "center" },
                                     this.$render("i-hstack", { opacity: 0.75, gap: "0.5rem" },
                                         this.$render("i-label", { caption: "Available on", font: { size: '0.875rem', color: Theme.text.third } }),
