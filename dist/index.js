@@ -1104,7 +1104,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                             this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between" },
                                 this.$render("i-label", { caption: "Action", font: { size: '0.875rem' } }),
                                 this.$render("i-combo-box", { id: "comboAction", placeholder: "Please select action", items: actionOptions, selectedItem: actionOptions[0], background: { color: Theme.background.gradient }, height: 32, minWidth: 180, border: { radius: 10 }, icon: { name: "angle-down", fill: '#fff', width: 12, height: 12 }, font: { size: '0.875rem' }, enabled: true, onChanged: this.handleChangeAction.bind(this), class: "custom-combobox" })),
-                            this.$render("i-vstack", { gap: "1rem", margin: { top: '1rem' }, border: { radius: 10, width: '1px', style: 'solid', color: '#8f8d8d' }, padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' } },
+                            this.$render("i-vstack", { gap: "1rem", margin: { top: '1rem' }, border: { radius: 10, width: '1px', style: 'solid', color: '#8f8d8d' }, padding: { top: '1rem', bottom: '0.5rem', left: '1rem', right: '1rem' } },
                                 this.$render("i-vstack", { gap: "1rem", width: "100%" },
                                     this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between" },
                                         this.$render("i-label", { caption: "Input" }),

@@ -837,7 +837,7 @@ export default class ScomGovernanceStaking extends Module {
                             <i-vstack
                                 gap="1rem" margin={{ top: '1rem' }}
                                 border={{ radius: 10, width: '1px', style: 'solid', color: '#8f8d8d' }}
-                                padding={{ top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }}
+                                padding={{ top: '1rem', bottom: '0.5rem', left: '1rem', right: '1rem' }}
                             >
                                 <i-vstack gap="1rem" width="100%">
                                     <i-hstack verticalAlignment="center" horizontalAlignment="space-between">
