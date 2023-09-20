@@ -131,6 +131,12 @@ declare module "@scom/scom-governance-staking" {
         private lblStakedBalance;
         private lblVotingBalance;
         private pnlLock;
+        private lblFreezedStake;
+        private mdUnlock;
+        private lblAvailVotingBalance;
+        private btnLock;
+        private lblStakeSettingStatus1;
+        private lblStakeSettingStatus2;
         private comboAction;
         private lblBalance;
         private tokenSelection;
@@ -170,6 +176,7 @@ declare module "@scom/scom-governance-staking" {
         private get totalVotingBalance();
         private get OAXWalletBalance();
         private get lastAvailableOn();
+        get isUnlockVotingBalanceDisabled(): boolean;
         get isBtnDisabled(): boolean;
         get balance(): string;
         removeRpcWalletEvents(): void;
@@ -194,11 +201,15 @@ declare module "@scom/scom-governance-staking" {
         private connectWallet;
         private updateBalance;
         private handleChangeAction;
+        private toggleUnlockModal;
+        private getAddVoteBalanceErrMsg;
+        private addVoteBalance;
         private handleConfirm;
         handleStake(): Promise<void>;
         private onApproveToken;
         onInputAmountChanged(source: Control): void;
         private setMaxBalance;
+        private updateLockPanel;
         private updateAddStakePanel;
         render(): any;
     }

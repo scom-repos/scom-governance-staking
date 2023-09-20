@@ -464,6 +464,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                         console.log(err);
                     }
                     this.lblBalance.caption = `Balance: ${components_4.FormatUtils.formatNumberWithSeparators(this.balance, 4)}`;
+                    this.updateLockPanel();
                     this.updateAddStakePanel();
                 });
             };
@@ -564,6 +565,9 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             return (0, components_4.moment)(new Date())
                 .add(this.minStakePeriod, 'second')
                 .format('MMM DD, YYYY');
+        }
+        get isUnlockVotingBalanceDisabled() {
+            return this.freezedStake.amount == 0 || this.freezedStake.timestamp == 0 || (0, components_4.moment)(this.freezedStake.lockTill).isAfter(new Date());
         }
         get isBtnDisabled() {
             const bal = new eth_wallet_3.BigNumber(this.balance);
@@ -763,6 +767,73 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             this.lblBalance.caption = `Balance: ${components_4.FormatUtils.formatNumberWithSeparators(this.balance, 4)}`;
             this.updateAddStakePanel();
         }
+        toggleUnlockModal() {
+            this.mdUnlock.visible = !this.mdUnlock.visible;
+        }
+        getAddVoteBalanceErrMsg(err) {
+            const processError = (err) => {
+                if (err) {
+                    if (!err.code) {
+                        try {
+                            return JSON.parse(err.message.substr(err.message.indexOf('{')));
+                        }
+                        catch (moreErr) {
+                            err = { code: 777, message: "Unknown Error" };
+                        }
+                    }
+                    else {
+                        return err;
+                    }
+                }
+                else {
+                    return { code: 778, message: "Error is Empty" };
+                }
+            };
+            let errorContent = '';
+            err = processError(err);
+            switch (err.message) {
+                case 'Transaction was not mined within 50 blocks, please make sure your transaction was properly sent. Be aware that it might still be mined!':
+                    console.log('@Implement: A proper way handling this error');
+                    break;
+                case 'Govenence: Nothing to stake':
+                    errorContent = 'You have nothing to stake';
+                    break;
+                case 'execution reverted: Governance: Freezed period not passed':
+                    errorContent = 'Freezed period not passed';
+                    break;
+                case 'execution reverted: Governance: insufficient balance':
+                    errorContent = 'Insufficient balance';
+                    break;
+                default:
+                    switch (err.code) {
+                        case 4001:
+                            errorContent = 'Transaction rejected by the user.';
+                            break;
+                        case 3:
+                            errorContent = 'Unlock value exceed locked fund';
+                            break;
+                        case 778: //custom error code: error is empty
+                        case 777: //custom error code: err.code is undefined AND went error again while JSON.parse
+                    }
+            }
+            return errorContent;
+        }
+        async addVoteBalance() {
+            if (this.isUnlockVotingBalanceDisabled)
+                return;
+            try {
+                this.showResultMessage('warning', 'You have staked!');
+                const receipt = await (0, api_1.doUnlockStake)(this.state);
+                if (receipt)
+                    this.showResultMessage('success', receipt.transactionHash);
+                this.refreshUI();
+            }
+            catch (error) {
+                console.error('unlockStake', error);
+                let errMsg = this.getAddVoteBalanceErrMsg(error);
+                this.showResultMessage('error', errMsg);
+            }
+        }
         async handleStake() {
             if (this.isBtnDisabled)
                 return;
@@ -791,6 +862,30 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             const token = this.state.getGovToken(this.chainId);
             this.approvalModelAction.checkAllowance(token, this.tokenSelection.value);
         }
+        updateLockPanel() {
+            var _a;
+            this.pnlLock.visible = this.freezedStake.timestamp > 0;
+            if (!this.pnlLock.visible)
+                return;
+            this.lblFreezedStake.caption = this.freezedStake.amount + " Staked Balance available to add";
+            this.lblAvailVotingBalance.caption = !this.freezedStake || this.freezedStake.amount == 0 ? 'Unavailable stake' : this.availableStake;
+            this.btnLock.caption = this.isUnlockVotingBalanceDisabled ? "Lock" : "Unlock";
+            this.btnLock.icon.name = this.isUnlockVotingBalanceDisabled ? "lock" : "lock-open";
+            this.btnLock.enabled = !this.isUnlockVotingBalanceDisabled;
+            const tokenSymbol = ((_a = this.state.getGovToken(this.chainId)) === null || _a === void 0 ? void 0 : _a.symbol) || '';
+            if (!this.isUnlockVotingBalanceDisabled) {
+                this.lblStakeSettingStatus1.caption = "Currently you can move to Voting Balance:";
+                this.lblStakeSettingStatus2.caption = `${components_4.FormatUtils.formatNumberWithSeparators(this.freezedStake.amount, 4)} ${tokenSymbol}`;
+            }
+            else if (this.freezedStake.amount == 0) {
+                this.lblStakeSettingStatus1.caption = "Stake some tokens to your Staked Balance";
+                this.lblStakeSettingStatus2.caption = `Wallet Balance: ${components_4.FormatUtils.formatNumberWithSeparators(this.OAXWalletBalance, 4)} ${tokenSymbol}`;
+            }
+            else {
+                this.lblStakeSettingStatus1.caption = "Currently your Staked Balance:";
+                this.lblStakeSettingStatus2.caption = `${components_4.FormatUtils.formatNumberWithSeparators(this.stakedBalance, 4)} ${tokenSymbol}`;
+            }
+        }
         updateAddStakePanel() {
             this.lblAddStake.caption = this.action === "add" ? "Add Stake" : "Remove Stake";
             this.lblTotalStakedBalance.caption = components_4.FormatUtils.formatNumberWithSeparators(this.totalStakedBalance, 4);
@@ -817,7 +912,26 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                                 this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between" },
                                     this.$render("i-label", { caption: "Staked Balance", font: { size: "0.875rem" } }),
                                     this.$render("i-label", { id: "lblStakedBalance", class: "balance-label", width: "50%", caption: "0", font: { size: "0.875rem" } })),
-                                this.$render("i-hstack", { id: "pnlLock", position: "relative" }),
+                                this.$render("i-hstack", { id: "pnlLock", position: "relative", visible: false },
+                                    this.$render("i-hstack", { verticalAlignment: "center", gap: 10 },
+                                        this.$render("i-label", { id: "lblFreezedStake", font: { color: Theme.colors.primary.main, size: '0.875rem' } }),
+                                        this.$render("i-panel", null,
+                                            this.$render("i-button", { class: "btn-os", height: "auto", padding: { top: '0.2rem', bottom: '0.2rem', left: '0.5rem', right: '0.5rem' }, caption: "Unlock", onClick: this.toggleUnlockModal.bind(this) }))),
+                                    this.$render("i-modal", { id: "mdUnlock", popupPlacement: 'bottom', maxWidth: 400, minWidth: 400, showBackdrop: false, background: { color: 'transparent' }, margin: { top: -10 }, height: "auto" },
+                                        this.$render("i-panel", { class: "custom-shadow", padding: { top: 20 } },
+                                            this.$render("i-panel", { class: "has-caret", padding: { top: 12, bottom: 12, left: 16, right: 16 }, background: { color: Theme.background.modal }, border: { radius: 4 } },
+                                                this.$render("i-vstack", { padding: { bottom: '0.5rem' }, border: { bottom: { width: 2, style: 'solid', color: Theme.divider } }, gap: "0.5rem" },
+                                                    this.$render("i-label", { caption: "Stake Setting", font: { size: '1rem', color: Theme.text.third } }),
+                                                    this.$render("i-label", { font: { size: '0.875rem' }, caption: "You'll be able to move your Staked Balance to Voting Balance; which will give privilage to participate our Polls and Executive Proposals." })),
+                                                this.$render("i-hstack", { padding: { top: '0.5rem', bottom: '0.5rem' }, border: { bottom: { width: 2, style: 'solid', color: Theme.divider } }, horizontalAlignment: "space-between", gap: "0.5rem" },
+                                                    this.$render("i-vstack", { gap: "0.5rem" },
+                                                        this.$render("i-label", { caption: "Voting Balance Available", font: { size: '1rem', color: Theme.text.third } }),
+                                                        this.$render("i-label", { id: "lblAvailVotingBalance", font: { size: '0.875rem' } })),
+                                                    this.$render("i-panel", null,
+                                                        this.$render("i-button", { id: "btnLock", class: "btn-os", height: "auto", padding: { top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }, caption: "Lock", icon: { width: 16, height: 16, name: 'lock', fill: '#fff' }, enabled: false, onClick: this.addVoteBalance.bind(this) }))),
+                                                this.$render("i-vstack", { padding: { top: '0.5rem' }, gap: "0.5rem" },
+                                                    this.$render("i-label", { id: "lblStakeSettingStatus1", font: { size: '1rem', color: Theme.text.third } }),
+                                                    this.$render("i-label", { id: "lblStakeSettingStatus2", font: { size: '0.875rem' } })))))),
                                 this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between" },
                                     this.$render("i-label", { caption: "Voting Balance", font: { size: "0.875rem" } }),
                                     this.$render("i-label", { id: "lblVotingBalance", class: "balance-label", width: "50%", caption: "0", font: { size: "0.875rem" } }))),
