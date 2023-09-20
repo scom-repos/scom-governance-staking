@@ -467,6 +467,7 @@ export default class ScomGovernanceStaking extends Module {
     }
 
     private toggleUnlockModal() {
+        this.updateLockPanel();
         this.mdUnlock.visible = !this.mdUnlock.visible
     }
 
@@ -631,7 +632,7 @@ export default class ScomGovernanceStaking extends Module {
                             <i-hstack width="100%" horizontalAlignment="center" margin={{ top: "1rem", bottom: "1rem" }}>
                                 <i-label caption="Manage Stake" font={{ size: '1rem', bold: true, color: Theme.text.third }}></i-label>
                             </i-hstack>
-                            <i-vstack gap="0.5rem">
+                            <i-vstack gap="1rem">
                                 <i-hstack verticalAlignment="center" horizontalAlignment="space-between">
                                     <i-label caption="Staked Balance" font={{ size: "0.875rem" }}></i-label>
                                     <i-label id="lblStakedBalance" class="balance-label" width="50%" caption="0" font={{ size: "0.875rem" }}></i-label>

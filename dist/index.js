@@ -768,6 +768,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             this.updateAddStakePanel();
         }
         toggleUnlockModal() {
+            this.updateLockPanel();
             this.mdUnlock.visible = !this.mdUnlock.visible;
         }
         getAddVoteBalanceErrMsg(err) {
@@ -908,7 +909,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                         this.$render("i-vstack", { width: "100%", height: "100%", maxWidth: 440, padding: { top: "1rem", bottom: "1rem", left: "1rem", right: "1rem" }, margin: { left: 'auto', right: 'auto' }, gap: "1rem" },
                             this.$render("i-hstack", { width: "100%", horizontalAlignment: "center", margin: { top: "1rem", bottom: "1rem" } },
                                 this.$render("i-label", { caption: "Manage Stake", font: { size: '1rem', bold: true, color: Theme.text.third } })),
-                            this.$render("i-vstack", { gap: "0.5rem" },
+                            this.$render("i-vstack", { gap: "1rem" },
                                 this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between" },
                                     this.$render("i-label", { caption: "Staked Balance", font: { size: "0.875rem" } }),
                                     this.$render("i-label", { id: "lblStakedBalance", class: "balance-label", width: "50%", caption: "0", font: { size: "0.875rem" } })),
