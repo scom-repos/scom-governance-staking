@@ -105,6 +105,51 @@ declare module "@scom/scom-governance-staking/api.ts" {
         freezeStakeTimestamp: any;
     }>;
 }
+/// <amd-module name="@scom/scom-governance-staking/formSchema.ts" />
+declare module "@scom/scom-governance-staking/formSchema.ts" {
+    import ScomNetworkPicker from '@scom/scom-network-picker';
+    const _default_3: {
+        dataSchema: {
+            type: string;
+            properties: {
+                networks: {
+                    type: string;
+                    required: boolean;
+                    items: {
+                        type: string;
+                        properties: {
+                            chainId: {
+                                type: string;
+                                enum: number[];
+                                required: boolean;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        uiSchema: {
+            type: string;
+            elements: {
+                type: string;
+                scope: string;
+                options: {
+                    detail: {
+                        type: string;
+                    };
+                };
+            }[];
+        };
+        customControls(): {
+            '#/properties/networks/properties/chainId': {
+                render: () => ScomNetworkPicker;
+                getData: (control: ScomNetworkPicker) => number;
+                setData: (control: ScomNetworkPicker, value: number) => void;
+            };
+        };
+    };
+    export default _default_3;
+}
 /// <amd-module name="@scom/scom-governance-staking" />
 declare module "@scom/scom-governance-staking" {
     import { Control, ControlElement, Module } from '@ijstech/components';
@@ -185,7 +230,39 @@ declare module "@scom/scom-governance-staking" {
         init(): Promise<void>;
         private _getActions;
         private getProjectOwnerActions;
-        getConfigurators(): any[];
+        getConfigurators(): ({
+            name: string;
+            target: string;
+            getProxySelectors: (chainId: number) => Promise<any[]>;
+            getActions: () => any[];
+            getData: any;
+            setData: (data: any) => Promise<void>;
+            getTag: any;
+            setTag: any;
+        } | {
+            name: string;
+            target: string;
+            getActions: any;
+            getData: any;
+            setData: (data: any) => Promise<void>;
+            getTag: any;
+            setTag: any;
+            getProxySelectors?: undefined;
+        } | {
+            name: string;
+            target: string;
+            getData: () => Promise<{
+                wallets: IWalletPlugin[];
+                networks: INetworkConfig[];
+                defaultChainId?: number;
+                showHeader?: boolean;
+            }>;
+            setData: (properties: IGovernanceStaking, linkParams?: Record<string, any>) => Promise<void>;
+            getTag: any;
+            setTag: any;
+            getProxySelectors?: undefined;
+            getActions?: undefined;
+        })[];
         private getData;
         private setData;
         getTag(): Promise<any>;
