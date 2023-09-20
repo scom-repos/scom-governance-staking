@@ -278,6 +278,18 @@ define("@scom/scom-governance-staking/index.css.ts", ["require", "exports", "@ij
                 textAlign: 'right',
                 textOverflow: 'ellipsis',
                 overflow: 'hidden'
+            },
+            '.btn-os': {
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: '1rem',
+                borderRadius: 5,
+                background: Theme.background.gradient,
+                $nest: {
+                    '&:disabled': {
+                        color: '#fff'
+                    }
+                }
             }
         }
     });
@@ -285,22 +297,42 @@ define("@scom/scom-governance-staking/index.css.ts", ["require", "exports", "@ij
 define("@scom/scom-governance-staking/api.ts", ["require", "exports", "@ijstech/eth-wallet", "@scom/oswap-openswap-contract"], function (require, exports, eth_wallet_2, oswap_openswap_contract_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getGovState = exports.getMinStakePeriod = void 0;
-    async function doStake(wallet, gov, govTokenDecimals, amount) {
+    exports.getGovState = exports.getMinStakePeriod = exports.doUnlockStake = exports.doUnstake = exports.doStake = void 0;
+    async function doStake(state, amount) {
+        const wallet = eth_wallet_2.Wallet.getClientInstance();
+        const chainId = state.getChainId();
+        const gov = state.getAddresses(chainId).OAXDEX_Governance;
         const govContract = new oswap_openswap_contract_1.Contracts.OAXDEX_Governance(wallet, gov);
-        const receipt = await govContract.stake(amount.shiftedBy(govTokenDecimals));
+        const decimals = govTokenDecimals(state);
+        if (!(amount instanceof eth_wallet_2.BigNumber)) {
+            amount = new eth_wallet_2.BigNumber(amount);
+        }
+        const receipt = await govContract.stake(amount.shiftedBy(decimals));
         return receipt;
     }
-    async function doUnstake(wallet, gov, govTokenDecimals, amount) {
+    exports.doStake = doStake;
+    async function doUnstake(state, amount) {
+        const wallet = eth_wallet_2.Wallet.getClientInstance();
+        const chainId = state.getChainId();
+        const gov = state.getAddresses(chainId).OAXDEX_Governance;
         const govContract = new oswap_openswap_contract_1.Contracts.OAXDEX_Governance(wallet, gov);
-        const receipt = await govContract.unstake(amount.shiftedBy(govTokenDecimals));
+        const decimals = govTokenDecimals(state);
+        if (!(amount instanceof eth_wallet_2.BigNumber)) {
+            amount = new eth_wallet_2.BigNumber(amount);
+        }
+        const receipt = await govContract.unstake(amount.shiftedBy(decimals));
         return receipt;
     }
-    async function doUnlockStake(wallet, gov) {
+    exports.doUnstake = doUnstake;
+    async function doUnlockStake(state) {
+        const wallet = eth_wallet_2.Wallet.getClientInstance();
+        const chainId = state.getChainId();
+        const gov = state.getAddresses(chainId).OAXDEX_Governance;
         const govContract = new oswap_openswap_contract_1.Contracts.OAXDEX_Governance(wallet, gov);
         const receipt = await govContract.unlockStake();
         return receipt;
     }
+    exports.doUnlockStake = doUnlockStake;
     async function getMinStakePeriod(state) {
         const wallet = state.getRpcWallet();
         const chainId = state.getChainId();
@@ -464,24 +496,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 }
             };
             this.handleConfirm = async () => {
-                const callback = async (err, receipt) => {
-                    if (err) {
-                        this.showResultMessage('error', err);
-                    }
-                    else if (receipt) {
-                        this.showResultMessage('success', receipt);
-                        // this.confirmBtn.rightIcon.spin = true;
-                        // this.confirmBtn.rightIcon.visible = true;
-                    }
-                };
-                const confirmationCallback = async (receipt) => {
-                    // this.confirmBtn.rightIcon.visible = false;
-                };
-                // registerSendTxEvents({
-                //     transactionHash: callback,
-                //     confirmation: confirmationCallback
-                // });
-                await this.handleStake();
+                this.approvalModelAction.doPayAction();
             };
             this.onApproveToken = async () => {
                 this.showResultMessage('warning', 'Approving');
@@ -679,7 +694,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
         async initApprovalModelAction() {
             this.approvalModelAction = await this.state.setApprovalModelAction({
                 sender: this,
-                payAction: this.handleConfirm,
+                payAction: this.handleStake,
                 onToBeApproved: async (token) => {
                     this.btnApprove.visible = true;
                     this.btnApprove.enabled = true;
@@ -711,12 +726,14 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                         this.showResultMessage('success', receipt);
                         this.tokenSelection.value = '0';
                         this.btnConfirm.enabled = false;
+                        this.btnConfirm.rightIcon.spin = true;
                         this.btnConfirm.rightIcon.visible = true;
                     }
                 },
                 onPaid: async () => {
                     this.btnConfirm.rightIcon.visible = false;
                     this.tokenSelection.value = '0';
+                    this.refreshUI();
                 },
                 onPayingError: async (err) => {
                     this.showResultMessage('error', err);
@@ -747,6 +764,17 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             this.updateAddStakePanel();
         }
         async handleStake() {
+            if (this.isBtnDisabled)
+                return;
+            const value = components_4.FormatUtils.formatNumberWithSeparators(this.tokenSelection.value);
+            const content = `${this.action === 'add' ? "Adding" : "Removing"} ${value} Staked Balance`;
+            this.showResultMessage('warning', content);
+            if (this.action === 'add') {
+                await (0, api_1.doStake)(this.state, this.tokenSelection.value);
+            }
+            else {
+                await (0, api_1.doUnstake)(this.state, this.tokenSelection.value);
+            }
         }
         onInputAmountChanged(source) {
             const val = source.value;
@@ -824,8 +852,8 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                         this.$render("i-vstack", { class: "none-select", padding: { top: '1rem', bottom: '1rem', left: '1rem', right: '1rem' }, maxWidth: 440, margin: { left: 'auto', right: 'auto' } },
                             this.$render("i-hstack", { gap: "0.5rem" },
                                 this.$render("i-hstack", { id: "pnlActionButtons", width: "100%", gap: "0.5rem", visible: false },
-                                    this.$render("i-button", { id: "btnApprove", caption: "Approve", height: "auto", width: "100%", padding: { top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }, border: { radius: 5 }, font: { weight: 600 }, rightIcon: { spin: true, visible: false }, class: "btn-os", enabled: false, visible: false, onClick: this.onApproveToken.bind(this) }),
-                                    this.$render("i-button", { id: "btnConfirm", caption: 'Add', height: "auto", width: "100%", padding: { top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }, border: { radius: 5 }, font: { weight: 600 }, rightIcon: { spin: true, visible: false }, enabled: false, visible: false, class: "btn-os", onClick: this.handleConfirm.bind(this) })),
+                                    this.$render("i-button", { id: "btnApprove", caption: "Approve", height: "auto", width: "100%", padding: { top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }, rightIcon: { spin: true, visible: false }, class: "btn-os", enabled: false, visible: false, onClick: this.onApproveToken.bind(this) }),
+                                    this.$render("i-button", { id: "btnConfirm", caption: 'Add', height: "auto", width: "100%", padding: { top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }, rightIcon: { spin: true, visible: false }, enabled: false, visible: false, class: "btn-os", onClick: this.handleConfirm.bind(this) })),
                                 this.$render("i-button", { id: "btnConnect", caption: "Connect Wallet", enabled: false, visible: false, width: "100%", padding: { top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }, class: "btn-os", onClick: this.connectWallet.bind(this) })))),
                     this.$render("i-scom-tx-status-modal", { id: "txStatusModal" }),
                     this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] }))));

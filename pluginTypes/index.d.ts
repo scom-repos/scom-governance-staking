@@ -2,6 +2,7 @@
 /// <reference path="@ijstech/eth-wallet/index.d.ts" />
 /// <reference path="@scom/scom-token-input/@ijstech/eth-wallet/index.d.ts" />
 /// <reference path="@scom/scom-token-input/@scom/scom-token-modal/@ijstech/eth-wallet/index.d.ts" />
+/// <reference path="@ijstech/eth-contract/index.d.ts" />
 /// <amd-module name="@scom/scom-governance-staking/assets.ts" />
 declare module "@scom/scom-governance-staking/assets.ts" {
     function fullPath(path: string): string;
@@ -90,7 +91,11 @@ declare module "@scom/scom-governance-staking/index.css.ts" {
 }
 /// <amd-module name="@scom/scom-governance-staking/api.ts" />
 declare module "@scom/scom-governance-staking/api.ts" {
+    import { BigNumber } from "@ijstech/eth-wallet";
     import { State } from "@scom/scom-governance-staking/store/index.ts";
+    export function doStake(state: State, amount: BigNumber | number | string): Promise<import("@ijstech/eth-contract").TransactionReceipt>;
+    export function doUnstake(state: State, amount: BigNumber | number | string): Promise<import("@ijstech/eth-contract").TransactionReceipt>;
+    export function doUnlockStake(state: State): Promise<import("@ijstech/eth-contract").TransactionReceipt>;
     export function getMinStakePeriod(state: State): Promise<number>;
     export function getGovState(state: State): Promise<{
         stakedBalance: number;

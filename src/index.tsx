@@ -29,7 +29,7 @@ import { BigNumber, Constants, IERC20ApprovalAction, Wallet } from '@ijstech/eth
 import customStyles from './index.css';
 import { ITokenObject, tokenStore } from '@scom/scom-token-list';
 import ScomTokenInput from '@scom/scom-token-input';
-import { getGovState, getMinStakePeriod } from './api';
+import { doStake, doUnstake, getGovState, getMinStakePeriod } from './api';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -356,7 +356,7 @@ export default class ScomGovernanceStaking extends Module {
     private async initApprovalModelAction() {
         this.approvalModelAction = await this.state.setApprovalModelAction({
             sender: this,
-            payAction: this.handleConfirm,
+            payAction: this.handleStake,
             onToBeApproved: async (token: ITokenObject) => {
                 this.btnApprove.visible = true;
                 this.btnApprove.enabled = true;
@@ -388,12 +388,14 @@ export default class ScomGovernanceStaking extends Module {
                     this.showResultMessage('success', receipt);
                     this.tokenSelection.value = '0';
                     this.btnConfirm.enabled = false;
+                    this.btnConfirm.rightIcon.spin = true;
                     this.btnConfirm.rightIcon.visible = true;
                 }
             },
             onPaid: async () => {
                 this.btnConfirm.rightIcon.visible = false;
                 this.tokenSelection.value = '0';
+                this.refreshUI();
             },
             onPayingError: async (err: Error) => {
                 this.showResultMessage('error', err);
@@ -453,28 +455,19 @@ export default class ScomGovernanceStaking extends Module {
     }
 
     private handleConfirm = async () => {
-        const callback = async (err: Error, receipt?: string) => {
-            if (err) {
-                this.showResultMessage('error', err);
-            } else if (receipt) {
-                this.showResultMessage('success', receipt);
-                // this.confirmBtn.rightIcon.spin = true;
-                // this.confirmBtn.rightIcon.visible = true;
-            }
-        };
-
-        const confirmationCallback = async (receipt: any) => {
-            // this.confirmBtn.rightIcon.visible = false;
-        };
-
-        // registerSendTxEvents({
-        //     transactionHash: callback,
-        //     confirmation: confirmationCallback
-        // });
-        await this.handleStake();
+        this.approvalModelAction.doPayAction();
     }
 
     async handleStake() {
+        if (this.isBtnDisabled) return;
+        const value = FormatUtils.formatNumberWithSeparators(this.tokenSelection.value);
+        const content = `${this.action === 'add' ? "Adding": "Removing"} ${value} Staked Balance`;
+        this.showResultMessage('warning', content);
+        if (this.action === 'add') {
+            await doStake(this.state, this.tokenSelection.value);
+        } else {
+            await doUnstake(this.state, this.tokenSelection.value);
+        }
     }
 
     private onApproveToken = async () => {
@@ -653,8 +646,6 @@ export default class ScomGovernanceStaking extends Module {
                                         caption="Approve"
                                         height="auto" width="100%"
                                         padding={{ top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }}
-                                        border={{ radius: 5 }}
-                                        font={{ weight: 600 }}
                                         rightIcon={{ spin: true, visible: false }}
                                         class="btn-os"
                                         enabled={false}
@@ -666,8 +657,6 @@ export default class ScomGovernanceStaking extends Module {
                                         caption='Add'
                                         height="auto" width="100%"
                                         padding={{ top: '0.75rem', bottom: '0.75rem', left: '1.5rem', right: '1.5rem' }}
-                                        border={{ radius: 5 }}
-                                        font={{ weight: 600 }}
                                         rightIcon={{ spin: true, visible: false }}
                                         enabled={false}
                                         visible={false}

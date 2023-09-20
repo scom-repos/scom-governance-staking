@@ -2,19 +2,36 @@ import { BigNumber, Utils, Wallet } from "@ijstech/eth-wallet";
 import { Contracts } from "@scom/oswap-openswap-contract";
 import { State } from "./store/index";
 
-async function doStake(wallet:Wallet, gov:string, govTokenDecimals:number, amount:BigNumber) {
+export async function doStake(state: State, amount:BigNumber | number | string) {
+    const wallet = Wallet.getClientInstance();
+    const chainId = state.getChainId();
+    const gov = state.getAddresses(chainId).OAXDEX_Governance;
     const govContract = new Contracts.OAXDEX_Governance(wallet, gov);
-    const receipt = await govContract.stake(amount.shiftedBy(govTokenDecimals));
+    const decimals = govTokenDecimals(state);
+    if (!(amount instanceof BigNumber)) {
+        amount = new BigNumber(amount);
+    }
+    const receipt = await govContract.stake(amount.shiftedBy(decimals));
     return receipt;
 }
 
-async function doUnstake(wallet:Wallet, gov:string, govTokenDecimals:number, amount:BigNumber) {
+export async function doUnstake(state: State, amount:BigNumber | number | string) {
+    const wallet = Wallet.getClientInstance();
+    const chainId = state.getChainId();
+    const gov = state.getAddresses(chainId).OAXDEX_Governance;
     const govContract = new Contracts.OAXDEX_Governance(wallet, gov);
-    const receipt = await govContract.unstake(amount.shiftedBy(govTokenDecimals));
+    const decimals = govTokenDecimals(state);
+    if (!(amount instanceof BigNumber)) {
+        amount = new BigNumber(amount);
+    }
+    const receipt = await govContract.unstake(amount.shiftedBy(decimals));
     return receipt;
 }
 
-async function doUnlockStake(wallet:Wallet, gov:string) {
+export async function doUnlockStake(state: State) {
+    const wallet = Wallet.getClientInstance();
+    const chainId = state.getChainId();
+    const gov = state.getAddresses(chainId).OAXDEX_Governance;
     const govContract = new Contracts.OAXDEX_Governance(wallet, gov);
     const receipt = await govContract.unlockStake();
     return receipt;

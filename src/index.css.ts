@@ -67,6 +67,18 @@ export default Styles.style({
       textAlign: 'right',
       textOverflow: 'ellipsis',
       overflow: 'hidden'
+    },
+    '.btn-os': {
+      color: '#fff',
+      fontWeight: 600,
+      fontSize: '1rem',
+      borderRadius: 5,
+      background: Theme.background.gradient,
+      $nest: {
+        '&:disabled': {
+          color: '#fff'
+        }
+      }
     }
   }
 })
