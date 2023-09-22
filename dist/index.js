@@ -533,14 +533,14 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                             this.stakedBalance = govState.stakedBalance;
                             this.votingBalance = govState.votingBalance;
                             this.availableStake = `${(0, components_4.moment)(govState.lockTill).format('DD MMM YYYY')} at ${(0, components_4.moment)(govState.lockTill).format('HH:mm')}`;
-                            this.lblStakedBalance.caption = components_4.FormatUtils.formatNumberWithSeparators(this.stakedBalance, 4);
-                            this.lblVotingBalance.caption = components_4.FormatUtils.formatNumberWithSeparators(this.votingBalance, 4);
+                            this.lblStakedBalance.caption = components_4.FormatUtils.formatNumber(this.stakedBalance, { decimalFigures: 4 });
+                            this.lblVotingBalance.caption = components_4.FormatUtils.formatNumber(this.votingBalance, { decimalFigures: 4 });
                         }
                     }
                     catch (err) {
                         console.log(err);
                     }
-                    this.lblBalance.caption = `Balance: ${components_4.FormatUtils.formatNumberWithSeparators(this.balance, 4)}`;
+                    this.lblBalance.caption = `Balance: ${components_4.FormatUtils.formatNumber(this.balance, { decimalFigures: 4 })}`;
                     this.updateLockPanel();
                     this.updateAddStakePanel();
                 });
@@ -945,7 +945,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
         handleChangeAction(source) {
             this.tokenSelection.value = null;
             this.action = source.selectedItem.value;
-            this.lblBalance.caption = `Balance: ${components_4.FormatUtils.formatNumberWithSeparators(this.balance, 4)}`;
+            this.lblBalance.caption = `Balance: ${components_4.FormatUtils.formatNumber(this.balance, { decimalFigures: 4 })}`;
             this.updateAddStakePanel();
         }
         toggleUnlockModal() {
@@ -1019,7 +1019,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
         async handleStake() {
             if (this.isBtnDisabled)
                 return;
-            const value = components_4.FormatUtils.formatNumberWithSeparators(this.tokenSelection.value);
+            const value = components_4.FormatUtils.formatNumber(this.tokenSelection.value);
             const content = `${this.action === 'add' ? "Adding" : "Removing"} ${value} Staked Balance`;
             this.showResultMessage('warning', content);
             if (this.action === 'add') {
@@ -1057,21 +1057,21 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             const tokenSymbol = ((_a = this.state.getGovToken(this.chainId)) === null || _a === void 0 ? void 0 : _a.symbol) || '';
             if (!this.isUnlockVotingBalanceDisabled) {
                 this.lblStakeSettingStatus1.caption = "Currently you can move to Voting Balance:";
-                this.lblStakeSettingStatus2.caption = `${components_4.FormatUtils.formatNumberWithSeparators(this.freezedStake.amount, 4)} ${tokenSymbol}`;
+                this.lblStakeSettingStatus2.caption = `${components_4.FormatUtils.formatNumber(this.freezedStake.amount, { decimalFigures: 4 })} ${tokenSymbol}`;
             }
             else if (this.freezedStake.amount == 0) {
                 this.lblStakeSettingStatus1.caption = "Stake some tokens to your Staked Balance";
-                this.lblStakeSettingStatus2.caption = `Wallet Balance: ${components_4.FormatUtils.formatNumberWithSeparators(this.OAXWalletBalance, 4)} ${tokenSymbol}`;
+                this.lblStakeSettingStatus2.caption = `Wallet Balance: ${components_4.FormatUtils.formatNumber(this.OAXWalletBalance, { decimalFigures: 4 })} ${tokenSymbol}`;
             }
             else {
                 this.lblStakeSettingStatus1.caption = "Currently your Staked Balance:";
-                this.lblStakeSettingStatus2.caption = `${components_4.FormatUtils.formatNumberWithSeparators(this.stakedBalance, 4)} ${tokenSymbol}`;
+                this.lblStakeSettingStatus2.caption = `${components_4.FormatUtils.formatNumber(this.stakedBalance, { decimalFigures: 4 })} ${tokenSymbol}`;
             }
         }
         updateAddStakePanel() {
             this.lblAddStake.caption = this.action === "add" ? "Add Stake" : "Remove Stake";
-            this.lblTotalStakedBalance.caption = components_4.FormatUtils.formatNumberWithSeparators(this.totalStakedBalance, 4);
-            this.lblTotalVotingBalance.caption = components_4.FormatUtils.formatNumberWithSeparators(this.totalVotingBalance, 4);
+            this.lblTotalStakedBalance.caption = components_4.FormatUtils.formatNumber(this.totalStakedBalance, { decimalFigures: 4 });
+            this.lblTotalVotingBalance.caption = components_4.FormatUtils.formatNumber(this.totalVotingBalance, { decimalFigures: 4 });
             this.iconAvailableOn.tooltip.content = "Available on " + this.lastAvailableOn;
             this.lblAvailableOn.caption = this.lastAvailableOn;
             this.pnlAddStake.visible = (0, index_1.isClientWalletConnected)();

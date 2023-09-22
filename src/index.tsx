@@ -460,13 +460,13 @@ export default class ScomGovernanceStaking extends Module {
                     this.availableStake = `${moment(govState.lockTill).format('DD MMM YYYY')} at ${moment(govState.lockTill).format(
                         'HH:mm',
                     )}`;
-                    this.lblStakedBalance.caption = FormatUtils.formatNumberWithSeparators(this.stakedBalance, 4);
-                    this.lblVotingBalance.caption = FormatUtils.formatNumberWithSeparators(this.votingBalance, 4);
+                    this.lblStakedBalance.caption = FormatUtils.formatNumber(this.stakedBalance, {decimalFigures:4});
+                    this.lblVotingBalance.caption = FormatUtils.formatNumber(this.votingBalance, {decimalFigures:4});
                 }
             } catch (err) {
                 console.log(err)
             }
-            this.lblBalance.caption = `Balance: ${FormatUtils.formatNumberWithSeparators(this.balance, 4)}`;
+            this.lblBalance.caption = `Balance: ${FormatUtils.formatNumber(this.balance, {decimalFigures:4})}`;
             this.updateLockPanel();
             this.updateAddStakePanel();
         });
@@ -569,7 +569,7 @@ export default class ScomGovernanceStaking extends Module {
     private handleChangeAction(source: Control) {
         this.tokenSelection.value = null;
         this.action = ((source as ComboBox).selectedItem as IComboItem).value as ActionType;
-        this.lblBalance.caption = `Balance: ${FormatUtils.formatNumberWithSeparators(this.balance, 4)}`;
+        this.lblBalance.caption = `Balance: ${FormatUtils.formatNumber(this.balance, {decimalFigures:4})}`;
         this.updateAddStakePanel();
     }
 
@@ -645,7 +645,7 @@ export default class ScomGovernanceStaking extends Module {
 
     async handleStake() {
         if (this.isBtnDisabled) return;
-        const value = FormatUtils.formatNumberWithSeparators(this.tokenSelection.value);
+        const value = FormatUtils.formatNumber(this.tokenSelection.value);
         const content = `${this.action === 'add' ? "Adding" : "Removing"} ${value} Staked Balance`;
         this.showResultMessage('warning', content);
         if (this.action === 'add') {
@@ -689,20 +689,20 @@ export default class ScomGovernanceStaking extends Module {
         const tokenSymbol = this.state.getGovToken(this.chainId)?.symbol || '';
         if (!this.isUnlockVotingBalanceDisabled) {
             this.lblStakeSettingStatus1.caption = "Currently you can move to Voting Balance:";
-            this.lblStakeSettingStatus2.caption = `${FormatUtils.formatNumberWithSeparators(this.freezedStake.amount, 4)} ${tokenSymbol}`;
+            this.lblStakeSettingStatus2.caption = `${FormatUtils.formatNumber(this.freezedStake.amount, {decimalFigures:4})} ${tokenSymbol}`;
         } else if (this.freezedStake.amount == 0) {
             this.lblStakeSettingStatus1.caption = "Stake some tokens to your Staked Balance";
-            this.lblStakeSettingStatus2.caption = `Wallet Balance: ${FormatUtils.formatNumberWithSeparators(this.OAXWalletBalance, 4)} ${tokenSymbol}`;
+            this.lblStakeSettingStatus2.caption = `Wallet Balance: ${FormatUtils.formatNumber(this.OAXWalletBalance, {decimalFigures:4})} ${tokenSymbol}`;
         } else {
             this.lblStakeSettingStatus1.caption = "Currently your Staked Balance:";
-            this.lblStakeSettingStatus2.caption = `${FormatUtils.formatNumberWithSeparators(this.stakedBalance, 4)} ${tokenSymbol}`;
+            this.lblStakeSettingStatus2.caption = `${FormatUtils.formatNumber(this.stakedBalance, {decimalFigures:4})} ${tokenSymbol}`;
         }
     }
 
     private updateAddStakePanel() {
         this.lblAddStake.caption = this.action === "add" ? "Add Stake" : "Remove Stake";
-        this.lblTotalStakedBalance.caption = FormatUtils.formatNumberWithSeparators(this.totalStakedBalance, 4);
-        this.lblTotalVotingBalance.caption = FormatUtils.formatNumberWithSeparators(this.totalVotingBalance, 4);
+        this.lblTotalStakedBalance.caption = FormatUtils.formatNumber(this.totalStakedBalance, {decimalFigures:4});
+        this.lblTotalVotingBalance.caption = FormatUtils.formatNumber(this.totalVotingBalance, {decimalFigures:4});
         this.iconAvailableOn.tooltip.content = "Available on " + this.lastAvailableOn;
         this.lblAvailableOn.caption = this.lastAvailableOn;
         this.pnlAddStake.visible = isClientWalletConnected();
