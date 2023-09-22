@@ -2,7 +2,7 @@ import ScomNetworkPicker from '@scom/scom-network-picker';
 import ScomTokenInput from "@scom/scom-token-input";
 import { tokenStore } from "@scom/scom-token-list";
 
-const chainIds = [1, 56, 137, 250, 97, 80001, 43113, 43114];
+const chainIds = [1, 56, 137, 250, 97, 80001, 43113, 43114, 42161, 421613];
 const networks = chainIds.map(v => { return { chainId: v } });
 
 export default {
