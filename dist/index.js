@@ -506,6 +506,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                     const chainId = this.chainId;
                     await this.initWallet();
                     await this.updateBalance();
+                    this.tokenSelection.chainId = chainId;
                     this.tokenSelection.token = this.state.getGovToken(chainId);
                     const connected = (0, index_1.isClientWalletConnected)();
                     if (!connected || !this.state.isRpcWalletConnected()) {
@@ -859,10 +860,6 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 this.setApprovalSpenderAddress();
                 this.refreshUI();
             });
-            if (rpcWallet.instanceId) {
-                if (this.tokenSelection)
-                    this.tokenSelection.rpcWalletId = rpcWallet.instanceId;
-            }
             const data = {
                 defaultChainId: this.defaultChainId,
                 wallets: this.wallets,

@@ -401,9 +401,6 @@ export default class ScomGovernanceStaking extends Module {
             this.setApprovalSpenderAddress();
             this.refreshUI();
         });
-        if (rpcWallet.instanceId) {
-            if (this.tokenSelection) this.tokenSelection.rpcWalletId = rpcWallet.instanceId;
-        }
         const data: any = {
             defaultChainId: this.defaultChainId,
             wallets: this.wallets,
@@ -432,6 +429,7 @@ export default class ScomGovernanceStaking extends Module {
             const chainId = this.chainId;
             await this.initWallet();
             await this.updateBalance();
+            this.tokenSelection.chainId = chainId;
             this.tokenSelection.token = this.state.getGovToken(chainId);
             const connected = isClientWalletConnected();
             if (!connected || !this.state.isRpcWalletConnected()) {
