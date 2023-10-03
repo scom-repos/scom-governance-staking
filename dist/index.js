@@ -378,7 +378,7 @@ define("@scom/scom-governance-staking/api.ts", ["require", "exports", "@ijstech/
         const govContract = new oswap_openswap_contract_1.Contracts.OAXDEX_Governance(wallet, gov);
         let result = await govContract.freezedStake(address);
         let minStakePeriod = await govContract.minStakePeriod();
-        let newResult = { amount: eth_wallet_2.Utils.fromDecimals(result.amount, govTokenDecimals(state)), timestamp: Number(result.timestamp) * 1000, lockTill: (Number(result.timestamp) + Number(minStakePeriod)) * 1000 };
+        let newResult = { amount: eth_wallet_2.Utils.fromDecimals(result.amount, govTokenDecimals(state)), timestamp: result.timestamp.toNumber() * 1000, lockTill: (result.timestamp.toNumber() + minStakePeriod.toNumber()) * 1000 };
         return newResult;
     };
     async function getGovState(state) {

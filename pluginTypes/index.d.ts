@@ -99,10 +99,10 @@ declare module "@scom/scom-governance-staking/api.ts" {
     export function getMinStakePeriod(state: State): Promise<number>;
     export function getGovState(state: State): Promise<{
         stakedBalance: number;
-        lockTill: any;
+        lockTill: number;
         votingBalance: number;
-        freezeStakeAmount: any;
-        freezeStakeTimestamp: any;
+        freezeStakeAmount: number;
+        freezeStakeTimestamp: number;
     }>;
 }
 /// <amd-module name="@scom/scom-governance-staking/formSchema.ts" />
