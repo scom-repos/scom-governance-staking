@@ -106,9 +106,9 @@ export class State {
     let govToken;
     let address = this.getAddresses(chainId).GovToken;
     if (chainId == 43113 || chainId == 43114 || chainId == 42161 || chainId == 421613 || chainId == 80001 || chainId == 137) {
-      govToken = { address: address, decimals: 18, symbol: "veOSWAP", name: 'Vote-escrowed OSWAP' };
+      govToken = { address: address, decimals: 18, symbol: "veOSWAP", name: 'Vote-escrowed OSWAP', chainId };
     }  else {
-      govToken = {address: address, decimals: 18, symbol: "OSWAP", name: 'OpenSwap'};
+      govToken = { address: address, decimals: 18, symbol: "OSWAP", name: 'OpenSwap', chainId };
     }
     return govToken;
   }

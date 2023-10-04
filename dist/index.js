@@ -159,10 +159,10 @@ define("@scom/scom-governance-staking/store/utils.ts", ["require", "exports", "@
             let govToken;
             let address = this.getAddresses(chainId).GovToken;
             if (chainId == 43113 || chainId == 43114 || chainId == 42161 || chainId == 421613 || chainId == 80001 || chainId == 137) {
-                govToken = { address: address, decimals: 18, symbol: "veOSWAP", name: 'Vote-escrowed OSWAP' };
+                govToken = { address: address, decimals: 18, symbol: "veOSWAP", name: 'Vote-escrowed OSWAP', chainId };
             }
             else {
-                govToken = { address: address, decimals: 18, symbol: "OSWAP", name: 'OpenSwap' };
+                govToken = { address: address, decimals: 18, symbol: "OSWAP", name: 'OpenSwap', chainId };
             }
             return govToken;
         }
@@ -1069,16 +1069,35 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 onPaying: async (receipt) => {
                     if (receipt) {
                         this.showResultMessage('success', receipt);
-                        this.tokenSelection.value = '0';
                         this.btnConfirm.enabled = false;
                         this.btnConfirm.rightIcon.spin = true;
                         this.btnConfirm.rightIcon.visible = true;
                     }
                 },
-                onPaid: async () => {
+                onPaid: async (data, receipt) => {
+                    const token = this.state.getGovToken(this.chainId);
+                    const amount = eth_wallet_4.Utils.toDecimals(this.tokenSelection.value, token.decimals).toString();
                     this.btnConfirm.rightIcon.visible = false;
                     this.tokenSelection.value = '0';
                     this.refreshUI();
+                    if (this.state.flowInvokerId) {
+                        const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
+                        const transactionsInfoArr = [
+                            {
+                                desc: `${this.action === 'add' ? 'Stake' : 'Unstake'} ${token.symbol}`,
+                                fromToken: token,
+                                toToken: null,
+                                fromTokenAmount: amount,
+                                toTokenAmount: '-',
+                                hash: receipt.transactionHash,
+                                timestamp
+                            }
+                        ];
+                        const eventName = `${this.state.flowInvokerId}:addTransactions`;
+                        components_5.application.EventBus.dispatch(eventName, {
+                            list: transactionsInfoArr
+                        });
+                    }
                 },
                 onPayingError: async (err) => {
                     this.showResultMessage('error', err);

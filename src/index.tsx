@@ -26,7 +26,7 @@ import ScomTxStatusModal from '@scom/scom-tx-status-modal';
 import { isClientWalletConnected, State } from './store/index';
 import configData from './data.json';
 import { ActionType, IGovernanceStaking } from './interface';
-import { BigNumber, Constants, IERC20ApprovalAction, Wallet } from '@ijstech/eth-wallet';
+import { BigNumber, Constants, IERC20ApprovalAction, TransactionReceipt, Utils, Wallet } from '@ijstech/eth-wallet';
 import customStyles from './index.css';
 import { ITokenObject, tokenStore } from '@scom/scom-token-list';
 import ScomTokenInput from '@scom/scom-token-input';
@@ -509,16 +509,35 @@ export default class ScomGovernanceStaking extends Module {
             onPaying: async (receipt?: string) => {
                 if (receipt) {
                     this.showResultMessage('success', receipt);
-                    this.tokenSelection.value = '0';
                     this.btnConfirm.enabled = false;
                     this.btnConfirm.rightIcon.spin = true;
                     this.btnConfirm.rightIcon.visible = true;
                 }
             },
-            onPaid: async () => {
+            onPaid: async (data?: any, receipt?: TransactionReceipt) => {
+                const token = this.state.getGovToken(this.chainId);
+                const amount = Utils.toDecimals(this.tokenSelection.value, token.decimals).toString();
                 this.btnConfirm.rightIcon.visible = false;
                 this.tokenSelection.value = '0';
                 this.refreshUI();
+                if (this.state.flowInvokerId) {
+                    const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
+                    const transactionsInfoArr = [
+                        {
+                            desc: `${this.action === 'add' ? 'Stake' : 'Unstake'} ${token.symbol}`,
+                            fromToken: token,
+                            toToken: null,
+                            fromTokenAmount: amount,
+                            toTokenAmount: '-',
+                            hash: receipt.transactionHash,
+                            timestamp
+                        }
+                    ];
+                    const eventName = `${this.state.flowInvokerId}:addTransactions`;
+                    application.EventBus.dispatch(eventName, {
+                        list: transactionsInfoArr
+                    });
+                }
             },
             onPayingError: async (err: Error) => {
                 this.showResultMessage('error', err);
