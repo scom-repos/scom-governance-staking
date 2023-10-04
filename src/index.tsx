@@ -432,6 +432,9 @@ export default class ScomGovernanceStaking extends Module {
             await this.updateBalance();
             this.tokenSelection.chainId = chainId;
             this.tokenSelection.token = this.state.getGovToken(chainId);
+            if (this._data.tokenInputValue) {
+                this.tokenSelection.value = this._data.tokenInputValue;
+            }
             const connected = isClientWalletConnected();
             if (!connected || !this.state.isRpcWalletConnected()) {
                 this.btnConnect.caption = connected ? "Switch Network" : "Connect Wallet";

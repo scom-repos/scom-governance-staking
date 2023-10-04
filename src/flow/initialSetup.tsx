@@ -153,11 +153,10 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
         const tokenBalances = await tokenStore.getTokenBalancesByChainId(this.chainId);
         const balance = tokenBalances[this.tokenInput.token.address.toLowerCase()];
         this.tokenRequirements[0].tokenOut.amount = this.tokenInput.value;
-        this.executionProperties.stakeInputValue = this.tokenInput.value;
+        this.executionProperties.tokenInputValue = this.tokenInput.value;
         const isBalanceSufficient = new BigNumber(balance).gte(this.tokenInput.value);
         this.$eventBus.dispatch(eventName, {
             isInitialSetup: true,
-            amount: this.tokenInput.value,
             tokenAcquisition: !isBalanceSufficient,
             tokenRequirements: this.tokenRequirements,
             executionProperties: this.executionProperties

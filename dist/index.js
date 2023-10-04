@@ -480,11 +480,10 @@ define("@scom/scom-governance-staking/flow/initialSetup.tsx", ["require", "expor
                 const tokenBalances = await scom_token_list_2.tokenStore.getTokenBalancesByChainId(this.chainId);
                 const balance = tokenBalances[this.tokenInput.token.address.toLowerCase()];
                 this.tokenRequirements[0].tokenOut.amount = this.tokenInput.value;
-                this.executionProperties.stakeInputValue = this.tokenInput.value;
+                this.executionProperties.tokenInputValue = this.tokenInput.value;
                 const isBalanceSufficient = new eth_wallet_3.BigNumber(balance).gte(this.tokenInput.value);
                 this.$eventBus.dispatch(eventName, {
                     isInitialSetup: true,
-                    amount: this.tokenInput.value,
                     tokenAcquisition: !isBalanceSufficient,
                     tokenRequirements: this.tokenRequirements,
                     executionProperties: this.executionProperties
@@ -662,6 +661,9 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                     await this.updateBalance();
                     this.tokenSelection.chainId = chainId;
                     this.tokenSelection.token = this.state.getGovToken(chainId);
+                    if (this._data.tokenInputValue) {
+                        this.tokenSelection.value = this._data.tokenInputValue;
+                    }
                     const connected = (0, index_2.isClientWalletConnected)();
                     if (!connected || !this.state.isRpcWalletConnected()) {
                         this.btnConnect.caption = connected ? "Switch Network" : "Connect Wallet";

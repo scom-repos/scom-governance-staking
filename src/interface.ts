@@ -6,4 +6,5 @@ export interface IGovernanceStaking {
     networks: INetworkConfig[];
     defaultChainId?: number;
     showHeader?: boolean;
+    tokenInputValue?: string;
 }

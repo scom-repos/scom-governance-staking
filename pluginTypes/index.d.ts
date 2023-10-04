@@ -84,6 +84,7 @@ declare module "@scom/scom-governance-staking/interface.ts" {
         networks: INetworkConfig[];
         defaultChainId?: number;
         showHeader?: boolean;
+        tokenInputValue?: string;
     }
 }
 /// <amd-module name="@scom/scom-governance-staking/index.css.ts" />
@@ -302,6 +303,7 @@ declare module "@scom/scom-governance-staking" {
                 networks: INetworkConfig[];
                 defaultChainId?: number;
                 showHeader?: boolean;
+                tokenInputValue?: string;
             }>;
             setData: (properties: IGovernanceStaking, linkParams?: Record<string, any>) => Promise<void>;
             getTag: any;
