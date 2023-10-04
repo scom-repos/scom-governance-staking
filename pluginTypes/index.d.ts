@@ -32,8 +32,10 @@ declare module "@scom/scom-governance-staking/store/utils.ts" {
         };
         rpcWalletId: string;
         approvalModel: ERC20ApprovalModel;
+        flowInvokerId: string;
         constructor(options: any);
         private initData;
+        setFlowInvokerId(id: string): void;
         initRpcWallet(defaultChainId: number): string;
         getRpcWallet(): import("@ijstech/eth-wallet").IRpcWallet;
         isRpcWalletConnected(): boolean;
@@ -149,6 +151,50 @@ declare module "@scom/scom-governance-staking/formSchema.ts" {
         };
     };
     export default _default_3;
+}
+/// <amd-module name="@scom/scom-governance-staking/flow/initialSetup.tsx" />
+declare module "@scom/scom-governance-staking/flow/initialSetup.tsx" {
+    import { Button, Container, ControlElement, Module } from "@ijstech/components";
+    interface ScomGovernanceStakingFlowInitialSetupElement extends ControlElement {
+        data?: any;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-scom-governance-staking-flow-initial-setup']: ScomGovernanceStakingFlowInitialSetupElement;
+            }
+        }
+    }
+    export default class ScomGovernanceStakingFlowInitialSetup extends Module {
+        private lblConnectedStatus;
+        private btnConnectWallet;
+        private btnStake;
+        private btnUnstake;
+        private lblStakeMsg;
+        private tokenInput;
+        private mdWallet;
+        private state;
+        private tokenRequirements;
+        private executionProperties;
+        private invokerId;
+        private $eventBus;
+        private walletEvents;
+        constructor(parent?: Container, options?: ControlElement);
+        private get rpcWallet();
+        private get chainId();
+        private resetRpcWallet;
+        setData(value: any): Promise<void>;
+        private initWallet;
+        private initializeWidgetConfig;
+        connectWallet(): Promise<void>;
+        private updateConnectStatus;
+        private registerEvents;
+        onHide(): void;
+        init(): void;
+        handleClickAction(target: Button): void;
+        private handleClickStart;
+        render(): any;
+    }
 }
 /// <amd-module name="@scom/scom-governance-staking" />
 declare module "@scom/scom-governance-staking" {
@@ -289,5 +335,8 @@ declare module "@scom/scom-governance-staking" {
         private updateLockPanel;
         private updateAddStakePanel;
         render(): any;
+        handleFlowStage(target: Control, stage: string, options: any): Promise<{
+            widget: any;
+        }>;
     }
 }

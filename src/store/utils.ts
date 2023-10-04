@@ -9,6 +9,7 @@ export class State {
   networkMap: { [key: number]: INetwork } = {};
   rpcWalletId: string = '';
   approvalModel: ERC20ApprovalModel;
+  flowInvokerId: string;
 
   constructor(options: any) {
     this.networkMap = getNetworkList();
@@ -22,6 +23,10 @@ export class State {
     if (options.networks) {
       this.setNetworkList(options.networks, options.infuraId)
     }
+  }
+
+  setFlowInvokerId(id: string) {
+    this.flowInvokerId = id;
   }
 
   initRpcWallet(defaultChainId: number) {
