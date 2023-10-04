@@ -25,7 +25,7 @@ import ScomWalletModal, { IWalletPlugin } from '@scom/scom-wallet-modal';
 import ScomTxStatusModal from '@scom/scom-tx-status-modal';
 import { isClientWalletConnected, State } from './store/index';
 import configData from './data.json';
-import { IGovernanceStaking } from './interface';
+import { ActionType, IGovernanceStaking } from './interface';
 import { BigNumber, Constants, IERC20ApprovalAction, Wallet } from '@ijstech/eth-wallet';
 import customStyles from './index.css';
 import { ITokenObject, tokenStore } from '@scom/scom-token-list';
@@ -46,8 +46,6 @@ const actionOptions = [
         label: 'Remove Stake'
     }
 ];
-
-type ActionType = "add" | "remove";
 
 interface ScomGovernanceStakingElement extends ControlElement {
     lazyLoad?: boolean;
@@ -432,6 +430,10 @@ export default class ScomGovernanceStaking extends Module {
             await this.updateBalance();
             this.tokenSelection.chainId = chainId;
             this.tokenSelection.token = this.state.getGovToken(chainId);
+            if (this._data.action) {
+                this.comboAction.selectedItem = actionOptions.find(action => action.value === this._data.action);
+                this.action = this._data.action || 'add';
+            }
             if (this._data.tokenInputValue) {
                 this.tokenSelection.value = this._data.tokenInputValue;
             }

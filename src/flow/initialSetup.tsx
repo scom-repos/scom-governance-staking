@@ -10,6 +10,7 @@ import {
     Styles
 } from "@ijstech/components";
 import { BigNumber, Constants, IEventBusRegistry, Wallet } from "@ijstech/eth-wallet";
+import { ActionType } from "../interface";
 import ScomTokenInput from "@scom/scom-token-input";
 import { tokenStore } from "@scom/scom-token-list";
 import ScomWalletModal from "@scom/scom-wallet-modal";
@@ -44,6 +45,7 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
     private invokerId: string;
     private $eventBus: IEventBus;
     private walletEvents: IEventBusRegistry[] = [];
+    private action: ActionType;
 
     constructor(parent?: Container, options?: ControlElement) {
         super(parent, options);
@@ -126,8 +128,8 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
         this.registerEvents();
     }
     handleClickAction(target: Button) {
-        const action = target.isSameNode(this.btnStake) ? 'stake' : 'unstake';
-        if (action === 'stake') {
+        this.action = target.isSameNode(this.btnStake) ? 'add' : 'remove';
+        if (this.action === 'add') {
             this.btnStake.background.color = Theme.colors.primary.main;
             this.btnStake.font = { color: Theme.colors.primary.contrastText };
             this.btnStake.icon.name = 'check-circle';
@@ -143,17 +145,20 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
             this.btnUnstake.icon.name = 'check-circle';
         }
         const token = this.state.getGovToken(this.chainId);
-        this.lblStakeMsg.caption = `How much ${token.symbol} you want to ${action}?`;
+        this.lblStakeMsg.caption = `How much ${token.symbol} you want to ${this.action === 'add' ? 'stake' : 'unstake'}?`;
         this.lblStakeMsg.visible = true;
         this.tokenInput.visible = true;
     }
     private handleClickStart = async () => {
         this.tokenInput.readOnly = true;
+        this.btnStake.enabled = false;
+        this.btnUnstake.enabled = false;
         let eventName = `${this.invokerId}:nextStep`;
         const tokenBalances = await tokenStore.getTokenBalancesByChainId(this.chainId);
         const balance = tokenBalances[this.tokenInput.token.address.toLowerCase()];
         this.tokenRequirements[0].tokenOut.amount = this.tokenInput.value;
         this.executionProperties.tokenInputValue = this.tokenInput.value;
+        this.executionProperties.action = this.action;
         const isBalanceSufficient = new BigNumber(balance).gte(this.tokenInput.value);
         this.$eventBus.dispatch(eventName, {
             isInitialSetup: true,

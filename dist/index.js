@@ -476,11 +476,14 @@ define("@scom/scom-governance-staking/flow/initialSetup.tsx", ["require", "expor
             this.walletEvents = [];
             this.handleClickStart = async () => {
                 this.tokenInput.readOnly = true;
+                this.btnStake.enabled = false;
+                this.btnUnstake.enabled = false;
                 let eventName = `${this.invokerId}:nextStep`;
                 const tokenBalances = await scom_token_list_2.tokenStore.getTokenBalancesByChainId(this.chainId);
                 const balance = tokenBalances[this.tokenInput.token.address.toLowerCase()];
                 this.tokenRequirements[0].tokenOut.amount = this.tokenInput.value;
                 this.executionProperties.tokenInputValue = this.tokenInput.value;
+                this.executionProperties.action = this.action;
                 const isBalanceSufficient = new eth_wallet_3.BigNumber(balance).gte(this.tokenInput.value);
                 this.$eventBus.dispatch(eventName, {
                     isInitialSetup: true,
@@ -570,8 +573,8 @@ define("@scom/scom-governance-staking/flow/initialSetup.tsx", ["require", "expor
             this.registerEvents();
         }
         handleClickAction(target) {
-            const action = target.isSameNode(this.btnStake) ? 'stake' : 'unstake';
-            if (action === 'stake') {
+            this.action = target.isSameNode(this.btnStake) ? 'add' : 'remove';
+            if (this.action === 'add') {
                 this.btnStake.background.color = Theme.colors.primary.main;
                 this.btnStake.font = { color: Theme.colors.primary.contrastText };
                 this.btnStake.icon.name = 'check-circle';
@@ -588,7 +591,7 @@ define("@scom/scom-governance-staking/flow/initialSetup.tsx", ["require", "expor
                 this.btnUnstake.icon.name = 'check-circle';
             }
             const token = this.state.getGovToken(this.chainId);
-            this.lblStakeMsg.caption = `How much ${token.symbol} you want to ${action}?`;
+            this.lblStakeMsg.caption = `How much ${token.symbol} you want to ${this.action === 'add' ? 'stake' : 'unstake'}?`;
             this.lblStakeMsg.visible = true;
             this.tokenInput.visible = true;
         }
@@ -661,6 +664,10 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                     await this.updateBalance();
                     this.tokenSelection.chainId = chainId;
                     this.tokenSelection.token = this.state.getGovToken(chainId);
+                    if (this._data.action) {
+                        this.comboAction.selectedItem = actionOptions.find(action => action.value === this._data.action);
+                        this.action = this._data.action || 'add';
+                    }
                     if (this._data.tokenInputValue) {
                         this.tokenSelection.value = this._data.tokenInputValue;
                     }

@@ -79,12 +79,14 @@ declare module "@scom/scom-governance-staking/data.json.ts" {
 declare module "@scom/scom-governance-staking/interface.ts" {
     import { INetworkConfig } from "@scom/scom-network-picker";
     import { IWalletPlugin } from "@scom/scom-wallet-modal";
+    export type ActionType = "add" | "remove";
     export interface IGovernanceStaking {
         wallets: IWalletPlugin[];
         networks: INetworkConfig[];
         defaultChainId?: number;
         showHeader?: boolean;
         tokenInputValue?: string;
+        action?: ActionType;
     }
 }
 /// <amd-module name="@scom/scom-governance-staking/index.css.ts" />
@@ -180,6 +182,7 @@ declare module "@scom/scom-governance-staking/flow/initialSetup.tsx" {
         private invokerId;
         private $eventBus;
         private walletEvents;
+        private action;
         constructor(parent?: Container, options?: ControlElement);
         private get rpcWallet();
         private get chainId();
@@ -202,7 +205,7 @@ declare module "@scom/scom-governance-staking" {
     import { Control, ControlElement, Module } from '@ijstech/components';
     import { INetworkConfig } from '@scom/scom-network-picker';
     import { IWalletPlugin } from '@scom/scom-wallet-modal';
-    import { IGovernanceStaking } from "@scom/scom-governance-staking/interface.ts";
+    import { ActionType, IGovernanceStaking } from "@scom/scom-governance-staking/interface.ts";
     interface ScomGovernanceStakingElement extends ControlElement {
         lazyLoad?: boolean;
         networks: INetworkConfig[];
@@ -304,6 +307,7 @@ declare module "@scom/scom-governance-staking" {
                 defaultChainId?: number;
                 showHeader?: boolean;
                 tokenInputValue?: string;
+                action?: ActionType;
             }>;
             setData: (properties: IGovernanceStaking, linkParams?: Record<string, any>) => Promise<void>;
             getTag: any;
