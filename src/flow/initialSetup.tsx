@@ -208,6 +208,7 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
                     <i-hstack width="50%" verticalAlignment="center">
                         <i-scom-token-input
                             id="tokenInput"
+                            width="100%"
                             background={{ color: Theme.input.background }}
                             border={{ radius: '1rem' }}
                             font={{ size: '1.25rem' }}

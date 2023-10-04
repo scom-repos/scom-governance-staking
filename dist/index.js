@@ -608,7 +608,7 @@ define("@scom/scom-governance-staking/flow/initialSetup.tsx", ["require", "expor
                         this.$render("i-button", { id: "btnUnstake", caption: "Unstake", font: { color: Theme.colors.primary.main }, padding: { top: '0.25rem', bottom: '0.25rem', left: '0.75rem', right: '0.75rem' }, border: { width: 1, style: 'solid', color: Theme.colors.primary.main }, background: { color: Theme.colors.primary.contrastText }, onClick: this.handleClickAction.bind(this) })),
                     this.$render("i-label", { id: "lblStakeMsg", caption: "How much OSWAP you want to stake?", visible: false }),
                     this.$render("i-hstack", { width: "50%", verticalAlignment: "center" },
-                        this.$render("i-scom-token-input", { id: "tokenInput", background: { color: Theme.input.background }, border: { radius: '1rem' }, font: { size: '1.25rem' }, placeholder: "0.0", tokenReadOnly: true, isBalanceShown: false, isBtnMaxShown: false, visible: false })),
+                        this.$render("i-scom-token-input", { id: "tokenInput", width: "100%", background: { color: Theme.input.background }, border: { radius: '1rem' }, font: { size: '1.25rem' }, placeholder: "0.0", tokenReadOnly: true, isBalanceShown: false, isBtnMaxShown: false, visible: false })),
                     this.$render("i-hstack", { horizontalAlignment: 'center' },
                         this.$render("i-button", { id: "btnStart", caption: "Start", padding: { top: '0.25rem', bottom: '0.25rem', left: '0.75rem', right: '0.75rem' }, font: { color: Theme.colors.primary.contrastText, size: '1.5rem' }, onClick: this.handleClickStart }))),
                 this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] })));
