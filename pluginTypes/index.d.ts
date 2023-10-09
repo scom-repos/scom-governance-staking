@@ -1,5 +1,7 @@
 /// <reference path="@scom/scom-dapp-container/@ijstech/eth-wallet/index.d.ts" />
 /// <reference path="@ijstech/eth-wallet/index.d.ts" />
+/// <reference path="@scom/scom-token-input/@ijstech/eth-wallet/index.d.ts" />
+/// <reference path="@scom/scom-token-input/@scom/scom-token-modal/@ijstech/eth-wallet/index.d.ts" />
 /// <reference path="@ijstech/eth-contract/index.d.ts" />
 /// <amd-module name="@scom/scom-governance-staking/assets.ts" />
 declare module "@scom/scom-governance-staking/assets.ts" {
@@ -30,10 +32,10 @@ declare module "@scom/scom-governance-staking/store/utils.ts" {
         };
         rpcWalletId: string;
         approvalModel: ERC20ApprovalModel;
-        flowInvokerId: string;
+        handleNextFlowStep: (data: any) => Promise<void>;
+        handleAddTransactions: (data: any) => Promise<void>;
         constructor(options: any);
         private initData;
-        setFlowInvokerId(id: string): void;
         initRpcWallet(defaultChainId: number): string;
         getRpcWallet(): import("@ijstech/eth-wallet").IRpcWallet;
         isRpcWalletConnected(): boolean;
@@ -155,7 +157,8 @@ declare module "@scom/scom-governance-staking/formSchema.ts" {
 }
 /// <amd-module name="@scom/scom-governance-staking/flow/initialSetup.tsx" />
 declare module "@scom/scom-governance-staking/flow/initialSetup.tsx" {
-    import { Button, Container, ControlElement, Module } from "@ijstech/components";
+    import { Button, ControlElement, Module } from "@ijstech/components";
+    import { State } from "@scom/scom-governance-staking/store/index.ts";
     interface ScomGovernanceStakingFlowInitialSetupElement extends ControlElement {
         data?: any;
     }
@@ -174,14 +177,13 @@ declare module "@scom/scom-governance-staking/flow/initialSetup.tsx" {
         private lblStakeMsg;
         private tokenInput;
         private mdWallet;
-        private state;
+        private _state;
         private tokenRequirements;
         private executionProperties;
-        private invokerId;
-        private $eventBus;
         private walletEvents;
         private action;
-        constructor(parent?: Container, options?: ControlElement);
+        get state(): State;
+        set state(value: State);
         private get rpcWallet();
         private get chainId();
         private resetRpcWallet;
@@ -200,7 +202,7 @@ declare module "@scom/scom-governance-staking/flow/initialSetup.tsx" {
 }
 /// <amd-module name="@scom/scom-governance-staking" />
 declare module "@scom/scom-governance-staking" {
-    import { Control, ControlElement, Module } from '@ijstech/components';
+    import { Control, ControlElement, Module, Container } from '@ijstech/components';
     import { INetworkConfig } from '@scom/scom-network-picker';
     import { IWalletPlugin } from '@scom/scom-wallet-modal';
     import { ActionType, IGovernanceStaking } from "@scom/scom-governance-staking/interface.ts";
@@ -272,6 +274,7 @@ declare module "@scom/scom-governance-staking" {
         get isUnlockVotingBalanceDisabled(): boolean;
         get isBtnDisabled(): boolean;
         get balance(): string;
+        constructor(parent?: Container, options?: ControlElement);
         removeRpcWalletEvents(): void;
         onHide(): void;
         isEmptyData(value: IGovernanceStaking): boolean;

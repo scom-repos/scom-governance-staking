@@ -9,7 +9,8 @@ export class State {
   networkMap: { [key: number]: INetwork } = {};
   rpcWalletId: string = '';
   approvalModel: ERC20ApprovalModel;
-  flowInvokerId: string;
+  handleNextFlowStep: (data: any) => Promise<void>;
+  handleAddTransactions: (data: any) => Promise<void>;
 
   constructor(options: any) {
     this.networkMap = getNetworkList();
@@ -23,10 +24,6 @@ export class State {
     if (options.networks) {
       this.setNetworkList(options.networks, options.infuraId)
     }
-  }
-
-  setFlowInvokerId(id: string) {
-    this.flowInvokerId = id;
   }
 
   initRpcWallet(defaultChainId: number) {
@@ -107,7 +104,7 @@ export class State {
     let address = this.getAddresses(chainId).GovToken;
     if (chainId == 43113 || chainId == 43114 || chainId == 42161 || chainId == 421613 || chainId == 80001 || chainId == 137) {
       govToken = { address: address, decimals: 18, symbol: "veOSWAP", name: 'Vote-escrowed OSWAP', chainId };
-    }  else {
+    } else {
       govToken = { address: address, decimals: 18, symbol: "OSWAP", name: 'OpenSwap', chainId };
     }
     return govToken;

@@ -39,18 +39,17 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
     private lblStakeMsg: Label;
     private tokenInput: ScomTokenInput;
     private mdWallet: ScomWalletModal;
-    private state: State;
+    private _state: State;
     private tokenRequirements: any;
     private executionProperties: any;
-    private invokerId: string;
-    private $eventBus: IEventBus;
     private walletEvents: IEventBusRegistry[] = [];
     private action: ActionType;
-
-    constructor(parent?: Container, options?: ControlElement) {
-        super(parent, options);
-        this.state = new State({});
-        this.$eventBus = application.EventBus;
+    
+    get state(): State {
+        return this._state;
+    }
+    set state(value: State) {
+        this._state = value;
     }
     private get rpcWallet() {
         return this.state.getRpcWallet();
@@ -64,7 +63,6 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
     async setData(value: any) {
         this.executionProperties = value.executionProperties;
         this.tokenRequirements = value.tokenRequirements;
-        this.invokerId = value.invokerId;
         await this.resetRpcWallet();
         await this.initializeWidgetConfig();
     }
@@ -153,14 +151,14 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
         this.tokenInput.readOnly = true;
         this.btnStake.enabled = false;
         this.btnUnstake.enabled = false;
-        let eventName = `${this.invokerId}:nextStep`;
         const tokenBalances = await tokenStore.getTokenBalancesByChainId(this.chainId);
         const balance = tokenBalances[this.tokenInput.token.address.toLowerCase()];
         this.tokenRequirements[0].tokenOut.amount = this.tokenInput.value;
         this.executionProperties.tokenInputValue = this.tokenInput.value;
         this.executionProperties.action = this.action;
         const isBalanceSufficient = new BigNumber(balance).gte(this.tokenInput.value);
-        this.$eventBus.dispatch(eventName, {
+        if (this.state.handleNextFlowStep)
+        this.state.handleNextFlowStep({
             isInitialSetup: true,
             tokenAcquisition: !isBalanceSufficient,
             tokenRequirements: this.tokenRequirements,

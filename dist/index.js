@@ -90,9 +90,6 @@ define("@scom/scom-governance-staking/store/utils.ts", ["require", "exports", "@
                 this.setNetworkList(options.networks, options.infuraId);
             }
         }
-        setFlowInvokerId(id) {
-            this.flowInvokerId = id;
-        }
         initRpcWallet(defaultChainId) {
             var _a, _b, _c;
             if (this.rpcWalletId) {
@@ -471,29 +468,33 @@ define("@scom/scom-governance-staking/flow/initialSetup.tsx", ["require", "expor
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_4.Styles.Theme.ThemeVars;
     let ScomGovernanceStakingFlowInitialSetup = class ScomGovernanceStakingFlowInitialSetup extends components_4.Module {
-        constructor(parent, options) {
-            super(parent, options);
+        constructor() {
+            super(...arguments);
             this.walletEvents = [];
             this.handleClickStart = async () => {
                 this.tokenInput.readOnly = true;
                 this.btnStake.enabled = false;
                 this.btnUnstake.enabled = false;
-                let eventName = `${this.invokerId}:nextStep`;
                 const tokenBalances = await scom_token_list_2.tokenStore.getTokenBalancesByChainId(this.chainId);
                 const balance = tokenBalances[this.tokenInput.token.address.toLowerCase()];
                 this.tokenRequirements[0].tokenOut.amount = this.tokenInput.value;
                 this.executionProperties.tokenInputValue = this.tokenInput.value;
                 this.executionProperties.action = this.action;
                 const isBalanceSufficient = new eth_wallet_3.BigNumber(balance).gte(this.tokenInput.value);
-                this.$eventBus.dispatch(eventName, {
-                    isInitialSetup: true,
-                    tokenAcquisition: !isBalanceSufficient,
-                    tokenRequirements: this.tokenRequirements,
-                    executionProperties: this.executionProperties
-                });
+                if (this.state.handleNextFlowStep)
+                    this.state.handleNextFlowStep({
+                        isInitialSetup: true,
+                        tokenAcquisition: !isBalanceSufficient,
+                        tokenRequirements: this.tokenRequirements,
+                        executionProperties: this.executionProperties
+                    });
             };
-            this.state = new index_1.State({});
-            this.$eventBus = components_4.application.EventBus;
+        }
+        get state() {
+            return this._state;
+        }
+        set state(value) {
+            this._state = value;
         }
         get rpcWallet() {
             return this.state.getRpcWallet();
@@ -507,7 +508,6 @@ define("@scom/scom-governance-staking/flow/initialSetup.tsx", ["require", "expor
         async setData(value) {
             this.executionProperties = value.executionProperties;
             this.tokenRequirements = value.tokenRequirements;
-            this.invokerId = value.invokerId;
             await this.resetRpcWallet();
             await this.initializeWidgetConfig();
         }
@@ -634,8 +634,86 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
         }
     ];
     let ScomGovernanceStaking = class ScomGovernanceStaking extends components_5.Module {
-        constructor() {
-            super(...arguments);
+        get chainId() {
+            return this.state.getChainId();
+        }
+        get defaultChainId() {
+            return this._data.defaultChainId;
+        }
+        set defaultChainId(value) {
+            this._data.defaultChainId = value;
+        }
+        get wallets() {
+            var _a;
+            return (_a = this._data.wallets) !== null && _a !== void 0 ? _a : [];
+        }
+        set wallets(value) {
+            this._data.wallets = value;
+        }
+        get networks() {
+            var _a;
+            return (_a = this._data.networks) !== null && _a !== void 0 ? _a : [];
+        }
+        set networks(value) {
+            this._data.networks = value;
+        }
+        get showHeader() {
+            var _a;
+            return (_a = this._data.showHeader) !== null && _a !== void 0 ? _a : true;
+        }
+        set showHeader(value) {
+            this._data.showHeader = value;
+        }
+        get totalStakedBalance() {
+            if (this.action === 'add') {
+                return new eth_wallet_4.BigNumber(this.stakedBalance).plus(this.tokenSelection.value ? this.tokenSelection.value : 0).toFixed();
+            }
+            else {
+                return new eth_wallet_4.BigNumber(this.stakedBalance).minus(this.tokenSelection.value ? this.tokenSelection.value : 0).toFixed();
+            }
+        }
+        get totalVotingBalance() {
+            if (this.action === 'add')
+                return this.votingBalance.toString();
+            if (new eth_wallet_4.BigNumber(this.tokenSelection.value || 0).gte(this.freezedStake.amount))
+                return this.totalStakedBalance;
+            return this.votingBalance.toString();
+        }
+        get OAXWalletBalance() {
+            var _a;
+            const token = this.state.getGovToken(this.chainId);
+            if (token) {
+                const address = (token === null || token === void 0 ? void 0 : token.address) || "";
+                return address ? (_a = this.allTokenBalancesMap[address.toLowerCase()]) !== null && _a !== void 0 ? _a : 0 : this.allTokenBalancesMap[token.symbol] || 0;
+            }
+            else {
+                return 0;
+            }
+        }
+        get lastAvailableOn() {
+            return (0, components_5.moment)(new Date())
+                .add(this.minStakePeriod, 'second')
+                .format('MMM DD, YYYY');
+        }
+        get isUnlockVotingBalanceDisabled() {
+            return this.freezedStake.amount == 0 || this.freezedStake.timestamp == 0 || (0, components_5.moment)(this.freezedStake.lockTill).isAfter(new Date());
+        }
+        get isBtnDisabled() {
+            const bal = new eth_wallet_4.BigNumber(this.balance);
+            const val = new eth_wallet_4.BigNumber(this.tokenSelection.value || 0);
+            return val.lte(0) || val.gt(bal) || !this.action;
+        }
+        get balance() {
+            if (this.action === 'remove') {
+                return new eth_wallet_4.BigNumber(this.stakedBalance).toFixed();
+            }
+            if (this.action === 'add') {
+                return new eth_wallet_4.BigNumber(this.OAXWalletBalance).toFixed();
+            }
+            return new eth_wallet_4.BigNumber(0).toFixed();
+        }
+        constructor(parent, options) {
+            super(parent, options);
             this._data = {
                 wallets: [],
                 networks: []
@@ -745,84 +823,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 const token = this.state.getGovToken(this.chainId);
                 this.approvalModelAction.doApproveAction(token, this.tokenSelection.value);
             };
-        }
-        get chainId() {
-            return this.state.getChainId();
-        }
-        get defaultChainId() {
-            return this._data.defaultChainId;
-        }
-        set defaultChainId(value) {
-            this._data.defaultChainId = value;
-        }
-        get wallets() {
-            var _a;
-            return (_a = this._data.wallets) !== null && _a !== void 0 ? _a : [];
-        }
-        set wallets(value) {
-            this._data.wallets = value;
-        }
-        get networks() {
-            var _a;
-            return (_a = this._data.networks) !== null && _a !== void 0 ? _a : [];
-        }
-        set networks(value) {
-            this._data.networks = value;
-        }
-        get showHeader() {
-            var _a;
-            return (_a = this._data.showHeader) !== null && _a !== void 0 ? _a : true;
-        }
-        set showHeader(value) {
-            this._data.showHeader = value;
-        }
-        get totalStakedBalance() {
-            if (this.action === 'add') {
-                return new eth_wallet_4.BigNumber(this.stakedBalance).plus(this.tokenSelection.value ? this.tokenSelection.value : 0).toFixed();
-            }
-            else {
-                return new eth_wallet_4.BigNumber(this.stakedBalance).minus(this.tokenSelection.value ? this.tokenSelection.value : 0).toFixed();
-            }
-        }
-        get totalVotingBalance() {
-            if (this.action === 'add')
-                return this.votingBalance.toString();
-            if (new eth_wallet_4.BigNumber(this.tokenSelection.value || 0).gte(this.freezedStake.amount))
-                return this.totalStakedBalance;
-            return this.votingBalance.toString();
-        }
-        get OAXWalletBalance() {
-            var _a;
-            const token = this.state.getGovToken(this.chainId);
-            if (token) {
-                const address = (token === null || token === void 0 ? void 0 : token.address) || "";
-                return address ? (_a = this.allTokenBalancesMap[address.toLowerCase()]) !== null && _a !== void 0 ? _a : 0 : this.allTokenBalancesMap[token.symbol] || 0;
-            }
-            else {
-                return 0;
-            }
-        }
-        get lastAvailableOn() {
-            return (0, components_5.moment)(new Date())
-                .add(this.minStakePeriod, 'second')
-                .format('MMM DD, YYYY');
-        }
-        get isUnlockVotingBalanceDisabled() {
-            return this.freezedStake.amount == 0 || this.freezedStake.timestamp == 0 || (0, components_5.moment)(this.freezedStake.lockTill).isAfter(new Date());
-        }
-        get isBtnDisabled() {
-            const bal = new eth_wallet_4.BigNumber(this.balance);
-            const val = new eth_wallet_4.BigNumber(this.tokenSelection.value || 0);
-            return val.lte(0) || val.gt(bal) || !this.action;
-        }
-        get balance() {
-            if (this.action === 'remove') {
-                return new eth_wallet_4.BigNumber(this.stakedBalance).toFixed();
-            }
-            if (this.action === 'add') {
-                return new eth_wallet_4.BigNumber(this.OAXWalletBalance).toFixed();
-            }
-            return new eth_wallet_4.BigNumber(0).toFixed();
+            this.state = new index_2.State(data_json_1.default);
         }
         removeRpcWalletEvents() {
             const rpcWallet = this.state.getRpcWallet();
@@ -839,7 +840,6 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
         async init() {
             this.isReadyCallbackQueued = true;
             super.init();
-            this.state = new index_2.State(data_json_1.default);
             const lazyLoad = this.getAttribute('lazyLoad', true, false);
             if (!lazyLoad) {
                 const networks = this.getAttribute('networks', true);
@@ -1080,7 +1080,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                     this.btnConfirm.rightIcon.visible = false;
                     this.tokenSelection.value = '0';
                     this.refreshUI();
-                    if (this.state.flowInvokerId) {
+                    if (this.state.handleAddTransactions) {
                         const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
                         const transactionsInfoArr = [
                             {
@@ -1093,8 +1093,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                                 timestamp
                             }
                         ];
-                        const eventName = `${this.state.flowInvokerId}:addTransactions`;
-                        components_5.application.EventBus.dispatch(eventName, {
+                        this.state.handleAddTransactions({
                             list: transactionsInfoArr
                         });
                     }
@@ -1339,13 +1338,14 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 widget = new initialSetup_1.default();
                 target.appendChild(widget);
                 await widget.ready();
+                widget.state = this.state;
                 let properties = options.properties;
                 let tokenRequirements = options.tokenRequirements;
-                let invokerId = options.invokerId;
+                this.state.handleNextFlowStep = options.onNextStep;
+                this.state.handleAddTransactions = options.onAddTransactions;
                 await widget.setData({
                     executionProperties: properties,
-                    tokenRequirements,
-                    invokerId
+                    tokenRequirements
                 });
             }
             else {
@@ -1354,8 +1354,8 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 await widget.ready();
                 let properties = options.properties;
                 let tag = options.tag;
-                let invokerId = options.invokerId;
-                this.state.setFlowInvokerId(invokerId);
+                this.state.handleNextFlowStep = options.onNextStep;
+                this.state.handleAddTransactions = options.onAddTransactions;
                 await this.setData(properties);
                 if (tag) {
                     this.setTag(tag);

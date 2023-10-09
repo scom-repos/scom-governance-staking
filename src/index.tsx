@@ -16,7 +16,8 @@ import {
     moment,
     IComboItem,
     Icon,
-    Modal
+    Modal,
+    Container
 } from '@ijstech/components';
 import ScomDappContainer from '@scom/scom-dapp-container';
 import Assets from './assets';
@@ -191,6 +192,11 @@ export default class ScomGovernanceStaking extends Module {
         return new BigNumber(0).toFixed();
     }
 
+    constructor(parent?: Container, options?: ControlElement) {
+        super(parent, options);
+        this.state = new State(configData);
+    }
+
     removeRpcWalletEvents() {
         const rpcWallet = this.state.getRpcWallet();
         if (rpcWallet) rpcWallet.unregisterAllWalletEvents();
@@ -208,7 +214,6 @@ export default class ScomGovernanceStaking extends Module {
     async init() {
         this.isReadyCallbackQueued = true;
         super.init();
-        this.state = new State(configData);
         const lazyLoad = this.getAttribute('lazyLoad', true, false);
         if (!lazyLoad) {
             const networks = this.getAttribute('networks', true);
@@ -520,7 +525,7 @@ export default class ScomGovernanceStaking extends Module {
                 this.btnConfirm.rightIcon.visible = false;
                 this.tokenSelection.value = '0';
                 this.refreshUI();
-                if (this.state.flowInvokerId) {
+                if (this.state.handleAddTransactions) {
                     const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
                     const transactionsInfoArr = [
                         {
@@ -533,8 +538,7 @@ export default class ScomGovernanceStaking extends Module {
                             timestamp
                         }
                     ];
-                    const eventName = `${this.state.flowInvokerId}:addTransactions`;
-                    application.EventBus.dispatch(eventName, {
+                    this.state.handleAddTransactions({
                         list: transactionsInfoArr
                     });
                 }
@@ -987,13 +991,14 @@ export default class ScomGovernanceStaking extends Module {
             widget = new ScomGovernanceStakingFlowInitialSetup();
             target.appendChild(widget);
             await widget.ready();
+            widget.state = this.state;
 			let properties = options.properties;
 			let tokenRequirements = options.tokenRequirements;
-			let invokerId = options.invokerId;
+			this.state.handleNextFlowStep = options.onNextStep;
+            this.state.handleAddTransactions = options.onAddTransactions;
 			await widget.setData({ 
 				executionProperties: properties, 
-				tokenRequirements, 
-				invokerId 
+				tokenRequirements
 			});
         } else {
             widget = this;
@@ -1001,8 +1006,8 @@ export default class ScomGovernanceStaking extends Module {
             await widget.ready();
 			let properties = options.properties;
 			let tag = options.tag;
-			let invokerId = options.invokerId;
-			this.state.setFlowInvokerId(invokerId);
+            this.state.handleNextFlowStep = options.onNextStep;
+            this.state.handleAddTransactions = options.onAddTransactions;
 			await this.setData(properties);
 			if (tag) {
 				this.setTag(tag);
