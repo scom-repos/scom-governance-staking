@@ -520,28 +520,9 @@ export default class ScomGovernanceStaking extends Module {
                 }
             },
             onPaid: async (data?: any, receipt?: TransactionReceipt) => {
-                const token = this.state.getGovToken(this.chainId);
-                const amount = Utils.toDecimals(this.tokenSelection.value, token.decimals).toString();
                 this.btnConfirm.rightIcon.visible = false;
                 this.tokenSelection.value = '0';
                 this.refreshUI();
-                if (this.state.handleAddTransactions) {
-                    const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
-                    const transactionsInfoArr = [
-                        {
-                            desc: `${this.action === 'add' ? 'Stake' : 'Unstake'} ${token.symbol}`,
-                            fromToken: token,
-                            toToken: null,
-                            fromTokenAmount: amount,
-                            toTokenAmount: '-',
-                            hash: receipt.transactionHash,
-                            timestamp
-                        }
-                    ];
-                    this.state.handleAddTransactions({
-                        list: transactionsInfoArr
-                    });
-                }
             },
             onPayingError: async (err: Error) => {
                 this.showResultMessage('error', err);
@@ -655,9 +636,29 @@ export default class ScomGovernanceStaking extends Module {
         if (this.isUnlockVotingBalanceDisabled) return;
         try {
             this.showResultMessage('warning', 'You have staked!');
+            const token = this.state.getGovToken(this.chainId);
             const receipt = await doUnlockStake(this.state);
-            if (receipt)
+            const amount = Utils.toDecimals(this.freezedStake.amount, token.decimals).toString();
+            if (receipt) {
                 this.showResultMessage('success', receipt.transactionHash);
+                if (this.state.handleAddTransactions) {
+                    const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
+                    const transactionsInfoArr = [
+                        {
+                            desc: `Unlock ${token.symbol}`,
+                            fromToken: token,
+                            toToken: null,
+                            fromTokenAmount: amount,
+                            toTokenAmount: '-',
+                            hash: receipt.transactionHash,
+                            timestamp
+                        }
+                    ];
+                    this.state.handleAddTransactions({
+                        list: transactionsInfoArr
+                    });
+                }
+            }
             this.refreshUI();
         } catch (error) {
             console.error('unlockStake', error);
@@ -675,10 +676,30 @@ export default class ScomGovernanceStaking extends Module {
         const value = FormatUtils.formatNumber(this.tokenSelection.value);
         const content = `${this.action === 'add' ? "Adding" : "Removing"} ${value} Staked Balance`;
         this.showResultMessage('warning', content);
+        let receipt;
+        const token = this.state.getGovToken(this.chainId);
+        const amount = Utils.toDecimals(this.tokenSelection.value, token.decimals).toString();
         if (this.action === 'add') {
-            await doStake(this.state, this.tokenSelection.value);
+            receipt = await doStake(this.state, this.tokenSelection.value);
         } else {
-            await doUnstake(this.state, this.tokenSelection.value);
+            receipt = await doUnstake(this.state, this.tokenSelection.value);
+        }
+        if (this.state.handleAddTransactions) {
+            const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
+            const transactionsInfoArr = [
+                {
+                    desc: `${this.action === 'add' ? 'Stake' : 'Unstake'} ${token.symbol}`,
+                    fromToken: token,
+                    toToken: null,
+                    fromTokenAmount: amount,
+                    toTokenAmount: '-',
+                    hash: receipt.transactionHash,
+                    timestamp
+                }
+            ];
+            this.state.handleAddTransactions({
+                list: transactionsInfoArr
+            });
         }
     }
 
