@@ -25,7 +25,7 @@ interface ScomGovernanceStakingFlowInitialSetupElement extends ControlElement {
 declare global {
     namespace JSX {
         interface IntrinsicElements {
-            ['i-scom-governance-staking-flow-initial-setup'] : ScomGovernanceStakingFlowInitialSetupElement;
+            ['i-scom-governance-staking-flow-initial-setup']: ScomGovernanceStakingFlowInitialSetupElement;
         }
     }
 }
@@ -44,7 +44,7 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
     private executionProperties: any;
     private walletEvents: IEventBusRegistry[] = [];
     private action: ActionType;
-    
+
     get state(): State {
         return this._state;
     }
@@ -87,12 +87,12 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
     }
     async connectWallet() {
         if (!isClientWalletConnected()) {
-			if (this.mdWallet) {
-				await application.loadPackage('@scom/scom-wallet-modal', '*');
-				this.mdWallet.networks = this.executionProperties.networks;
-				this.mdWallet.wallets = this.executionProperties.wallets;
-				this.mdWallet.showModal();
-			}
+            if (this.mdWallet) {
+                await application.loadPackage('@scom/scom-wallet-modal', '*');
+                this.mdWallet.networks = this.executionProperties.networks;
+                this.mdWallet.wallets = this.executionProperties.wallets;
+                this.mdWallet.showModal();
+            }
         }
     }
     private updateConnectStatus(connected: boolean) {
@@ -158,18 +158,18 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
         this.executionProperties.action = this.action;
         const isBalanceSufficient = new BigNumber(balance).gte(this.tokenInput.value);
         if (this.state.handleNextFlowStep)
-        this.state.handleNextFlowStep({
-            isInitialSetup: true,
-            tokenAcquisition: !isBalanceSufficient,
-            tokenRequirements: this.tokenRequirements,
-            executionProperties: this.executionProperties
-        });
+            this.state.handleNextFlowStep({
+                isInitialSetup: true,
+                tokenAcquisition: !isBalanceSufficient,
+                tokenRequirements: this.tokenRequirements,
+                executionProperties: this.executionProperties
+            });
     }
     render() {
         return (
             <i-vstack gap="1rem" padding={{ top: 10, bottom: 10, left: 20, right: 20 }}>
                 <i-label caption="Manage Stake"></i-label>
-                
+
                 <i-vstack gap="1rem">
                     <i-label id="lblConnectedStatus"></i-label>
                     <i-hstack>
