@@ -566,7 +566,7 @@ export default class ScomGovernanceStaking extends Module {
     private async updateBalance() {
         const rpcWallet = this.state.getRpcWallet();
         if (rpcWallet.address) {
-            if (!this.isEmptyData(this._data)) await tokenStore.updateAllTokenBalances(rpcWallet);
+            if (!this.isEmptyData(this._data)) await tokenStore.updateTokenBalancesByChainId(this.chainId);
             let tokenBalances = tokenStore.getTokenBalancesByChainId(this.chainId);
             this.allTokenBalancesMap = tokenBalances || {};
         } else {

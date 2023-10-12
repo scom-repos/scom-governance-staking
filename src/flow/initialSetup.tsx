@@ -78,12 +78,11 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
         const connected = isClientWalletConnected();
         this.updateConnectStatus(connected);
         await this.initWallet();
-        const rpcWallet = this.rpcWallet;
         const token = this.state.getGovToken(this.chainId);
         this.tokenInput.chainId = this.chainId
         this.tokenInput.tokenDataListProp = [token];
         this.tokenInput.token = token
-        await tokenStore.updateTokenBalances(rpcWallet, [token]);
+        await tokenStore.updateTokenBalancesByChainId(this.chainId, [token]);
     }
     async connectWallet() {
         if (!isClientWalletConnected()) {

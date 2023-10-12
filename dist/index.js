@@ -524,12 +524,11 @@ define("@scom/scom-governance-staking/flow/initialSetup.tsx", ["require", "expor
             const connected = (0, index_1.isClientWalletConnected)();
             this.updateConnectStatus(connected);
             await this.initWallet();
-            const rpcWallet = this.rpcWallet;
             const token = this.state.getGovToken(this.chainId);
             this.tokenInput.chainId = this.chainId;
             this.tokenInput.tokenDataListProp = [token];
             this.tokenInput.token = token;
-            await scom_token_list_2.tokenStore.updateTokenBalances(rpcWallet, [token]);
+            await scom_token_list_2.tokenStore.updateTokenBalancesByChainId(this.chainId, [token]);
         }
         async connectWallet() {
             if (!(0, index_1.isClientWalletConnected)()) {
@@ -1093,7 +1092,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             const rpcWallet = this.state.getRpcWallet();
             if (rpcWallet.address) {
                 if (!this.isEmptyData(this._data))
-                    await scom_token_list_3.tokenStore.updateAllTokenBalances(rpcWallet);
+                    await scom_token_list_3.tokenStore.updateTokenBalancesByChainId(this.chainId);
                 let tokenBalances = scom_token_list_3.tokenStore.getTokenBalancesByChainId(this.chainId);
                 this.allTokenBalancesMap = tokenBalances || {};
             }
