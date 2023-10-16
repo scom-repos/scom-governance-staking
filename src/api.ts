@@ -52,7 +52,7 @@ const govTokenDecimals = (state: State) => {
 }
 
 
-const stakeOf = async function (state: State, address: string) {
+export const stakeOf = async function (state: State, address: string) {
     const wallet = state.getRpcWallet();
     const chainId = state.getChainId();
     const gov = state.getAddresses(chainId).OAXDEX_Governance;
@@ -91,4 +91,29 @@ export async function getGovState(state: State) {
         return govStakeObject;
     }
     return null;
+}
+
+export async function getVotingValue(state: State, param1: any) {
+    let result: {
+        minExeDelay?: number;
+        minVoteDuration?: number;
+        maxVoteDuration?: number;
+        minOaxTokenToCreateVote?: number;
+        minQuorum?: number;
+    } = {};
+    const wallet = state.getRpcWallet();
+    const chainId = state.getChainId();
+    const address = state.getAddresses(chainId)?.OAXDEX_Governance;
+    if (address) {
+        const govContract = new Contracts.OAXDEX_Governance(wallet, address);
+        const params = await govContract.getVotingParams(Utils.stringToBytes32(param1) as string);
+        result = {
+            minExeDelay: params.minExeDelay.toNumber(),
+            minVoteDuration: params.minVoteDuration.toNumber(),
+            maxVoteDuration: params.maxVoteDuration.toNumber(),
+            minOaxTokenToCreateVote: Number(Utils.fromDecimals(params.minOaxTokenToCreateVote).toFixed()),
+            minQuorum: Number(Utils.fromDecimals(params.minQuorum).toFixed())
+        };
+    }
+    return result;
 }

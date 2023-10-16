@@ -1,7 +1,5 @@
 /// <reference path="@scom/scom-dapp-container/@ijstech/eth-wallet/index.d.ts" />
 /// <reference path="@ijstech/eth-wallet/index.d.ts" />
-/// <reference path="@scom/scom-token-input/@ijstech/eth-wallet/index.d.ts" />
-/// <reference path="@scom/scom-token-input/@scom/scom-token-modal/@ijstech/eth-wallet/index.d.ts" />
 /// <reference path="@ijstech/eth-contract/index.d.ts" />
 /// <amd-module name="@scom/scom-governance-staking/assets.ts" />
 declare module "@scom/scom-governance-staking/assets.ts" {
@@ -34,6 +32,7 @@ declare module "@scom/scom-governance-staking/store/utils.ts" {
         approvalModel: ERC20ApprovalModel;
         handleNextFlowStep: (data: any) => Promise<void>;
         handleAddTransactions: (data: any) => Promise<void>;
+        handleJumpToStep: (data: any) => Promise<void>;
         constructor(options: any);
         private initData;
         initRpcWallet(defaultChainId: number): string;
@@ -80,13 +79,19 @@ declare module "@scom/scom-governance-staking/interface.ts" {
     import { INetworkConfig } from "@scom/scom-network-picker";
     import { IWalletPlugin } from "@scom/scom-wallet-modal";
     export type ActionType = "add" | "remove";
-    export interface IGovernanceStaking {
+    export interface IGovernanceStaking extends IGovernanceStakingFlow {
         wallets: IWalletPlugin[];
         networks: INetworkConfig[];
         defaultChainId?: number;
         showHeader?: boolean;
         tokenInputValue?: string;
         action?: ActionType;
+    }
+    interface IGovernanceStakingFlow {
+        isFlow?: boolean;
+        prevStep?: string;
+        fromToken?: string;
+        toToken?: string;
     }
 }
 /// <amd-module name="@scom/scom-governance-staking/index.css.ts" />
@@ -102,12 +107,20 @@ declare module "@scom/scom-governance-staking/api.ts" {
     export function doUnstake(state: State, amount: BigNumber | number | string): Promise<import("@ijstech/eth-contract").TransactionReceipt>;
     export function doUnlockStake(state: State): Promise<import("@ijstech/eth-contract").TransactionReceipt>;
     export function getMinStakePeriod(state: State): Promise<number>;
+    export const stakeOf: (state: State, address: string) => Promise<BigNumber>;
     export function getGovState(state: State): Promise<{
         stakedBalance: number;
         lockTill: number;
         votingBalance: number;
         freezeStakeAmount: number;
         freezeStakeTimestamp: number;
+    }>;
+    export function getVotingValue(state: State, param1: any): Promise<{
+        minExeDelay?: number;
+        minVoteDuration?: number;
+        maxVoteDuration?: number;
+        minOaxTokenToCreateVote?: number;
+        minQuorum?: number;
     }>;
 }
 /// <amd-module name="@scom/scom-governance-staking/formSchema.ts" />
@@ -309,6 +322,10 @@ declare module "@scom/scom-governance-staking" {
                 showHeader?: boolean;
                 tokenInputValue?: string;
                 action?: ActionType;
+                isFlow?: boolean;
+                prevStep?: string;
+                fromToken?: string;
+                toToken?: string;
             }>;
             setData: (properties: IGovernanceStaking, linkParams?: Record<string, any>) => Promise<void>;
             getTag: any;

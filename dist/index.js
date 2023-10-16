@@ -313,7 +313,7 @@ define("@scom/scom-governance-staking/index.css.ts", ["require", "exports", "@ij
 define("@scom/scom-governance-staking/api.ts", ["require", "exports", "@ijstech/eth-wallet", "@scom/oswap-openswap-contract"], function (require, exports, eth_wallet_2, oswap_openswap_contract_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getGovState = exports.getMinStakePeriod = exports.doUnlockStake = exports.doUnstake = exports.doStake = void 0;
+    exports.getVotingValue = exports.getGovState = exports.stakeOf = exports.getMinStakePeriod = exports.doUnlockStake = exports.doUnstake = exports.doStake = void 0;
     async function doStake(state, amount) {
         const wallet = eth_wallet_2.Wallet.getClientInstance();
         const chainId = state.getChainId();
@@ -371,6 +371,7 @@ define("@scom/scom-governance-staking/api.ts", ["require", "exports", "@ijstech/
         result = eth_wallet_2.Utils.fromDecimals(result, govTokenDecimals(state));
         return result;
     };
+    exports.stakeOf = stakeOf;
     const freezedStake = async function (state, address) {
         const wallet = state.getRpcWallet();
         const chainId = state.getChainId();
@@ -386,7 +387,7 @@ define("@scom/scom-governance-staking/api.ts", ["require", "exports", "@ijstech/
         const chainId = state.getChainId();
         const address = state.getAddresses(chainId).OAXDEX_Governance;
         if (address) {
-            let stakeOfResult = await stakeOf(state, wallet.account.address);
+            let stakeOfResult = await (0, exports.stakeOf)(state, wallet.account.address);
             let freezeStakeResult = await freezedStake(state, wallet.account.address);
             let stakedBalance = new eth_wallet_2.BigNumber(freezeStakeResult.amount).plus(stakeOfResult);
             const govStakeObject = {
@@ -401,6 +402,26 @@ define("@scom/scom-governance-staking/api.ts", ["require", "exports", "@ijstech/
         return null;
     }
     exports.getGovState = getGovState;
+    async function getVotingValue(state, param1) {
+        var _a;
+        let result = {};
+        const wallet = state.getRpcWallet();
+        const chainId = state.getChainId();
+        const address = (_a = state.getAddresses(chainId)) === null || _a === void 0 ? void 0 : _a.OAXDEX_Governance;
+        if (address) {
+            const govContract = new oswap_openswap_contract_1.Contracts.OAXDEX_Governance(wallet, address);
+            const params = await govContract.getVotingParams(eth_wallet_2.Utils.stringToBytes32(param1));
+            result = {
+                minExeDelay: params.minExeDelay.toNumber(),
+                minVoteDuration: params.minVoteDuration.toNumber(),
+                maxVoteDuration: params.maxVoteDuration.toNumber(),
+                minOaxTokenToCreateVote: Number(eth_wallet_2.Utils.fromDecimals(params.minOaxTokenToCreateVote).toFixed()),
+                minQuorum: Number(eth_wallet_2.Utils.fromDecimals(params.minQuorum).toFixed())
+            };
+        }
+        return result;
+    }
+    exports.getVotingValue = getVotingValue;
 });
 define("@scom/scom-governance-staking/formSchema.ts", ["require", "exports", "@scom/scom-network-picker"], function (require, exports, scom_network_picker_1) {
     "use strict";
@@ -1166,10 +1187,11 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 const token = this.state.getGovToken(this.chainId);
                 const receipt = await (0, api_1.doUnlockStake)(this.state);
                 const amount = eth_wallet_4.Utils.toDecimals(this.freezedStake.amount, token.decimals).toString();
+                const wallet = this.state.getRpcWallet();
                 if (receipt) {
                     this.showResultMessage('success', receipt.transactionHash);
                     if (this.state.handleAddTransactions) {
-                        const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
+                        const timestamp = await wallet.getBlockTimestamp(receipt.blockNumber.toString());
                         const transactionsInfoArr = [
                             {
                                 desc: `Unlock ${token.symbol}`,
@@ -1183,6 +1205,21 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                         ];
                         this.state.handleAddTransactions({
                             list: transactionsInfoArr
+                        });
+                    }
+                }
+                if (this.state.handleJumpToStep && this._data.isFlow && this._data.prevStep == 'scom-group-queue-pair') {
+                    const paramValueObj = await (0, api_1.getVotingValue)(this.state, 'vote');
+                    const minThreshold = paramValueObj.minOaxTokenToCreateVote;
+                    const votingBalance = (await (0, api_1.stakeOf)(this.state, wallet.account.address)).toNumber();
+                    if (votingBalance >= minThreshold) {
+                        this.state.handleJumpToStep({
+                            widgetName: 'scom-governance-proposal',
+                            executionProperties: {
+                                fromToken: this._data.fromToken,
+                                toToken: this._data.toToken,
+                                isFlow: true
+                            }
                         });
                     }
                 }
@@ -1363,6 +1400,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 let tokenRequirements = options.tokenRequirements;
                 this.state.handleNextFlowStep = options.onNextStep;
                 this.state.handleAddTransactions = options.onAddTransactions;
+                this.state.handleJumpToStep = options.onJumpToStep;
                 await widget.setData({
                     executionProperties: properties,
                     tokenRequirements
@@ -1376,6 +1414,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 let tag = options.tag;
                 this.state.handleNextFlowStep = options.onNextStep;
                 this.state.handleAddTransactions = options.onAddTransactions;
+                this.state.handleJumpToStep = options.onJumpToStep;
                 await this.setData(properties);
                 if (tag) {
                     this.setTag(tag);

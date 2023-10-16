@@ -3,11 +3,18 @@ import { IWalletPlugin } from "@scom/scom-wallet-modal";
 
 export type ActionType = "add" | "remove";
 
-export interface IGovernanceStaking {
+export interface IGovernanceStaking extends IGovernanceStakingFlow {
     wallets: IWalletPlugin[];
     networks: INetworkConfig[];
     defaultChainId?: number;
     showHeader?: boolean;
     tokenInputValue?: string;
     action?: ActionType;
+}
+
+interface IGovernanceStakingFlow {
+    isFlow?: boolean;
+    prevStep?: string;
+    fromToken?: string;
+    toToken?: string;
 }

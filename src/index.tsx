@@ -31,7 +31,7 @@ import { BigNumber, Constants, IERC20ApprovalAction, TransactionReceipt, Utils, 
 import customStyles from './index.css';
 import { ITokenObject, tokenStore } from '@scom/scom-token-list';
 import ScomTokenInput from '@scom/scom-token-input';
-import { doStake, doUnstake, doUnlockStake, getGovState, getMinStakePeriod } from './api';
+import { doStake, doUnstake, doUnlockStake, getGovState, getMinStakePeriod, getVotingValue, stakeOf } from './api';
 import formSchema from './formSchema';
 import ScomGovernanceStakingFlowInitialSetup from './flow/initialSetup';
 
@@ -639,10 +639,11 @@ export default class ScomGovernanceStaking extends Module {
             const token = this.state.getGovToken(this.chainId);
             const receipt = await doUnlockStake(this.state);
             const amount = Utils.toDecimals(this.freezedStake.amount, token.decimals).toString();
+            const wallet = this.state.getRpcWallet();
             if (receipt) {
                 this.showResultMessage('success', receipt.transactionHash);
                 if (this.state.handleAddTransactions) {
-                    const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
+                    const timestamp = await wallet.getBlockTimestamp(receipt.blockNumber.toString());
                     const transactionsInfoArr = [
                         {
                             desc: `Unlock ${token.symbol}`,
@@ -657,6 +658,21 @@ export default class ScomGovernanceStaking extends Module {
                     this.state.handleAddTransactions({
                         list: transactionsInfoArr
                     });
+                }
+            }
+            if (this.state.handleJumpToStep && this._data.isFlow && this._data.prevStep =='scom-group-queue-pair') {
+                const paramValueObj = await getVotingValue(this.state, 'vote');
+                const minThreshold = paramValueObj.minOaxTokenToCreateVote;
+                const votingBalance = (await stakeOf(this.state, wallet.account.address)).toNumber();
+                if (votingBalance >= minThreshold) {
+                    this.state.handleJumpToStep({
+                        widgetName: 'scom-governance-proposal',
+                        executionProperties: {
+                            fromToken: this._data.fromToken,
+                            toToken: this._data.toToken,
+                            isFlow: true
+                        }
+                    })
                 }
             }
             this.refreshUI();
@@ -1017,6 +1033,7 @@ export default class ScomGovernanceStaking extends Module {
 			let tokenRequirements = options.tokenRequirements;
 			this.state.handleNextFlowStep = options.onNextStep;
             this.state.handleAddTransactions = options.onAddTransactions;
+            this.state.handleJumpToStep = options.onJumpToStep;
 			await widget.setData({ 
 				executionProperties: properties, 
 				tokenRequirements
@@ -1029,6 +1046,7 @@ export default class ScomGovernanceStaking extends Module {
 			let tag = options.tag;
             this.state.handleNextFlowStep = options.onNextStep;
             this.state.handleAddTransactions = options.onAddTransactions;
+            this.state.handleJumpToStep = options.onJumpToStep;
 			await this.setData(properties);
 			if (tag) {
 				this.setTag(tag);
