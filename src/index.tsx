@@ -12,7 +12,6 @@ import {
     Panel,
     Styles,
     VStack,
-    FormatUtils,
     moment,
     IComboItem,
     Icon,
@@ -24,7 +23,7 @@ import Assets from './assets';
 import { INetworkConfig } from '@scom/scom-network-picker';
 import ScomWalletModal, { IWalletPlugin } from '@scom/scom-wallet-modal';
 import ScomTxStatusModal from '@scom/scom-tx-status-modal';
-import { isClientWalletConnected, State } from './store/index';
+import { formatNumber, isClientWalletConnected, State } from './store/index';
 import configData from './data.json';
 import { ActionType, IGovernanceStaking } from './interface';
 import { BigNumber, Constants, IERC20ApprovalAction, TransactionReceipt, Utils, Wallet } from '@ijstech/eth-wallet';
@@ -98,8 +97,8 @@ export default class ScomGovernanceStaking extends Module {
         networks: []
     };
     tag: any = {};
-    private stakedBalance: number = 0;
-    private votingBalance: number = 0;
+    private stakedBalance: string = '0';
+    private votingBalance: string = '0';
     private availableStake: string = '0';
     private action: ActionType = "add";
     private freezedStake: any = {};
@@ -150,10 +149,10 @@ export default class ScomGovernanceStaking extends Module {
 
     private get totalVotingBalance(): string {
         if (this.action === 'add')
-            return this.votingBalance.toString();
+            return this.votingBalance;
         if (new BigNumber(this.tokenSelection.value || 0).gte(this.freezedStake.amount))
             return this.totalStakedBalance;
-        return this.votingBalance.toString();
+        return this.votingBalance;
     }
 
     private get OAXWalletBalance(): number {
@@ -173,7 +172,7 @@ export default class ScomGovernanceStaking extends Module {
     }
 
     get isUnlockVotingBalanceDisabled() {
-        return this.freezedStake.amount == 0 || this.freezedStake.timestamp == 0 || moment(this.freezedStake.lockTill).isAfter(new Date());
+        return new BigNumber(this.freezedStake.amount).eq(0) || this.freezedStake.timestamp == 0 || moment(this.freezedStake.lockTill).isAfter(new Date());
     }
 
     get isBtnDisabled() {
@@ -469,13 +468,13 @@ export default class ScomGovernanceStaking extends Module {
                     this.availableStake = `${moment(govState.lockTill).format('DD MMM YYYY')} at ${moment(govState.lockTill).format(
                         'HH:mm',
                     )}`;
-                    this.lblStakedBalance.caption = FormatUtils.formatNumber(this.stakedBalance, {decimalFigures:4});
-                    this.lblVotingBalance.caption = FormatUtils.formatNumber(this.votingBalance, {decimalFigures:4});
+                    this.lblStakedBalance.caption = formatNumber(this.stakedBalance);
+                    this.lblVotingBalance.caption = formatNumber(this.votingBalance);
                 }
             } catch (err) {
                 console.log(err)
             }
-            this.lblBalance.caption = `Balance: ${FormatUtils.formatNumber(this.balance, {decimalFigures:4})}`;
+            this.lblBalance.caption = `Balance: ${formatNumber(this.balance)}`;
             this.updateLockPanel();
             this.updateAddStakePanel();
         });
@@ -577,7 +576,7 @@ export default class ScomGovernanceStaking extends Module {
     private handleChangeAction(source: Control) {
         this.tokenSelection.value = null;
         this.action = ((source as ComboBox).selectedItem as IComboItem).value as ActionType;
-        this.lblBalance.caption = `Balance: ${FormatUtils.formatNumber(this.balance, {decimalFigures:4})}`;
+        this.lblBalance.caption = `Balance: ${formatNumber(this.balance)}`;
         this.updateAddStakePanel();
     }
 
@@ -689,7 +688,7 @@ export default class ScomGovernanceStaking extends Module {
 
     async handleStake() {
         if (this.isBtnDisabled) return;
-        const value = FormatUtils.formatNumber(this.tokenSelection.value);
+        const value = formatNumber(this.tokenSelection.value);
         const content = `${this.action === 'add' ? "Adding" : "Removing"} ${value} Staked Balance`;
         this.showResultMessage('warning', content);
         let receipt;
@@ -746,27 +745,27 @@ export default class ScomGovernanceStaking extends Module {
         this.pnlLock.visible = this.freezedStake.timestamp > 0;
         if (!this.pnlLock.visible) return;
         this.lblFreezedStake.caption = this.freezedStake.amount + " Staked Balance available to add";
-        this.lblAvailVotingBalance.caption = !this.freezedStake || this.freezedStake.amount == 0 ? 'Unavailable stake' : this.availableStake;
+        this.lblAvailVotingBalance.caption = !this.freezedStake || new BigNumber(this.freezedStake.amount).eq(0) ? 'Unavailable stake' : this.availableStake;
         this.btnLock.caption = this.isUnlockVotingBalanceDisabled ? "Lock" : "Unlock";
         this.btnLock.icon.name = this.isUnlockVotingBalanceDisabled ? "lock" : "lock-open";
         this.btnLock.enabled = !this.isUnlockVotingBalanceDisabled;
         const tokenSymbol = this.state.getGovToken(this.chainId)?.symbol || '';
         if (!this.isUnlockVotingBalanceDisabled) {
             this.lblStakeSettingStatus1.caption = "Currently you can move to Voting Balance:";
-            this.lblStakeSettingStatus2.caption = `${FormatUtils.formatNumber(this.freezedStake.amount, {decimalFigures:4})} ${tokenSymbol}`;
-        } else if (this.freezedStake.amount == 0) {
+            this.lblStakeSettingStatus2.caption = `${formatNumber(this.freezedStake.amount)} ${tokenSymbol}`;
+        } else if (new BigNumber(this.freezedStake.amount).eq(0)) {
             this.lblStakeSettingStatus1.caption = "Stake some tokens to your Staked Balance";
-            this.lblStakeSettingStatus2.caption = `Wallet Balance: ${FormatUtils.formatNumber(this.OAXWalletBalance, {decimalFigures:4})} ${tokenSymbol}`;
+            this.lblStakeSettingStatus2.caption = `Wallet Balance: ${formatNumber(this.OAXWalletBalance)} ${tokenSymbol}`;
         } else {
             this.lblStakeSettingStatus1.caption = "Currently your Staked Balance:";
-            this.lblStakeSettingStatus2.caption = `${FormatUtils.formatNumber(this.stakedBalance, {decimalFigures:4})} ${tokenSymbol}`;
+            this.lblStakeSettingStatus2.caption = `${formatNumber(this.stakedBalance)} ${tokenSymbol}`;
         }
     }
 
     private updateAddStakePanel() {
         this.lblAddStake.caption = this.action === "add" ? "Add Stake" : "Remove Stake";
-        this.lblTotalStakedBalance.caption = FormatUtils.formatNumber(this.totalStakedBalance, {decimalFigures:4});
-        this.lblTotalVotingBalance.caption = FormatUtils.formatNumber(this.totalVotingBalance, {decimalFigures:4});
+        this.lblTotalStakedBalance.caption = formatNumber(this.totalStakedBalance);
+        this.lblTotalVotingBalance.caption = formatNumber(this.totalVotingBalance);
         this.iconAvailableOn.tooltip.content = "Available on " + this.lastAvailableOn;
         this.lblAvailableOn.caption = this.lastAvailableOn;
         this.pnlAddStake.visible = isClientWalletConnected();

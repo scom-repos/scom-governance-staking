@@ -73,7 +73,7 @@ define("@scom/scom-governance-staking/store/core.ts", ["require", "exports"], fu
 define("@scom/scom-governance-staking/store/utils.ts", ["require", "exports", "@ijstech/components", "@ijstech/eth-wallet", "@scom/scom-network-list", "@scom/scom-token-list", "@scom/scom-governance-staking/store/core.ts"], function (require, exports, components_2, eth_wallet_1, scom_network_list_1, scom_token_list_1, core_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getWETH = exports.isClientWalletConnected = exports.State = void 0;
+    exports.formatNumber = exports.getWETH = exports.isClientWalletConnected = exports.State = void 0;
     class State {
         constructor(options) {
             this.infuraId = '';
@@ -175,6 +175,12 @@ define("@scom/scom-governance-staking/store/utils.ts", ["require", "exports", "@
         return wrappedToken;
     };
     exports.getWETH = getWETH;
+    function formatNumber(value, decimalFigures) {
+        decimalFigures = decimalFigures || 4;
+        const newValue = new eth_wallet_1.BigNumber(value).toFixed(decimalFigures);
+        return components_2.FormatUtils.formatNumber(newValue, { decimalFigures: decimalFigures });
+    }
+    exports.formatNumber = formatNumber;
 });
 define("@scom/scom-governance-staking/store/index.ts", ["require", "exports", "@scom/scom-governance-staking/store/utils.ts"], function (require, exports, utils_1) {
     "use strict";
@@ -391,10 +397,10 @@ define("@scom/scom-governance-staking/api.ts", ["require", "exports", "@ijstech/
             let freezeStakeResult = await freezedStake(state, wallet.account.address);
             let stakedBalance = new eth_wallet_2.BigNumber(freezeStakeResult.amount).plus(stakeOfResult);
             const govStakeObject = {
-                stakedBalance: stakedBalance.toNumber(),
+                stakedBalance: stakedBalance.toFixed(),
                 lockTill: freezeStakeResult.lockTill,
-                votingBalance: stakeOfResult.toNumber(),
-                freezeStakeAmount: freezeStakeResult.amount.toNumber(),
+                votingBalance: stakeOfResult.toFixed(),
+                freezeStakeAmount: freezeStakeResult.amount.toFixed(),
                 freezeStakeTimestamp: freezeStakeResult.timestamp
             };
             return govStakeObject;
@@ -694,10 +700,10 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
         }
         get totalVotingBalance() {
             if (this.action === 'add')
-                return this.votingBalance.toString();
+                return this.votingBalance;
             if (new eth_wallet_4.BigNumber(this.tokenSelection.value || 0).gte(this.freezedStake.amount))
                 return this.totalStakedBalance;
-            return this.votingBalance.toString();
+            return this.votingBalance;
         }
         get OAXWalletBalance() {
             var _a;
@@ -716,7 +722,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 .format('MMM DD, YYYY');
         }
         get isUnlockVotingBalanceDisabled() {
-            return this.freezedStake.amount == 0 || this.freezedStake.timestamp == 0 || (0, components_5.moment)(this.freezedStake.lockTill).isAfter(new Date());
+            return new eth_wallet_4.BigNumber(this.freezedStake.amount).eq(0) || this.freezedStake.timestamp == 0 || (0, components_5.moment)(this.freezedStake.lockTill).isAfter(new Date());
         }
         get isBtnDisabled() {
             const bal = new eth_wallet_4.BigNumber(this.balance);
@@ -739,8 +745,8 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 networks: []
             };
             this.tag = {};
-            this.stakedBalance = 0;
-            this.votingBalance = 0;
+            this.stakedBalance = '0';
+            this.votingBalance = '0';
             this.availableStake = '0';
             this.action = "add";
             this.freezedStake = {};
@@ -795,14 +801,14 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                             this.stakedBalance = govState.stakedBalance;
                             this.votingBalance = govState.votingBalance;
                             this.availableStake = `${(0, components_5.moment)(govState.lockTill).format('DD MMM YYYY')} at ${(0, components_5.moment)(govState.lockTill).format('HH:mm')}`;
-                            this.lblStakedBalance.caption = components_5.FormatUtils.formatNumber(this.stakedBalance, { decimalFigures: 4 });
-                            this.lblVotingBalance.caption = components_5.FormatUtils.formatNumber(this.votingBalance, { decimalFigures: 4 });
+                            this.lblStakedBalance.caption = (0, index_2.formatNumber)(this.stakedBalance);
+                            this.lblVotingBalance.caption = (0, index_2.formatNumber)(this.votingBalance);
                         }
                     }
                     catch (err) {
                         console.log(err);
                     }
-                    this.lblBalance.caption = `Balance: ${components_5.FormatUtils.formatNumber(this.balance, { decimalFigures: 4 })}`;
+                    this.lblBalance.caption = `Balance: ${(0, index_2.formatNumber)(this.balance)}`;
                     this.updateLockPanel();
                     this.updateAddStakePanel();
                 });
@@ -1124,7 +1130,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
         handleChangeAction(source) {
             this.tokenSelection.value = null;
             this.action = source.selectedItem.value;
-            this.lblBalance.caption = `Balance: ${components_5.FormatUtils.formatNumber(this.balance, { decimalFigures: 4 })}`;
+            this.lblBalance.caption = `Balance: ${(0, index_2.formatNumber)(this.balance)}`;
             this.updateAddStakePanel();
         }
         toggleUnlockModal() {
@@ -1234,7 +1240,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
         async handleStake() {
             if (this.isBtnDisabled)
                 return;
-            const value = components_5.FormatUtils.formatNumber(this.tokenSelection.value);
+            const value = (0, index_2.formatNumber)(this.tokenSelection.value);
             const content = `${this.action === 'add' ? "Adding" : "Removing"} ${value} Staked Balance`;
             this.showResultMessage('warning', content);
             let receipt;
@@ -1285,28 +1291,28 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             if (!this.pnlLock.visible)
                 return;
             this.lblFreezedStake.caption = this.freezedStake.amount + " Staked Balance available to add";
-            this.lblAvailVotingBalance.caption = !this.freezedStake || this.freezedStake.amount == 0 ? 'Unavailable stake' : this.availableStake;
+            this.lblAvailVotingBalance.caption = !this.freezedStake || new eth_wallet_4.BigNumber(this.freezedStake.amount).eq(0) ? 'Unavailable stake' : this.availableStake;
             this.btnLock.caption = this.isUnlockVotingBalanceDisabled ? "Lock" : "Unlock";
             this.btnLock.icon.name = this.isUnlockVotingBalanceDisabled ? "lock" : "lock-open";
             this.btnLock.enabled = !this.isUnlockVotingBalanceDisabled;
             const tokenSymbol = ((_a = this.state.getGovToken(this.chainId)) === null || _a === void 0 ? void 0 : _a.symbol) || '';
             if (!this.isUnlockVotingBalanceDisabled) {
                 this.lblStakeSettingStatus1.caption = "Currently you can move to Voting Balance:";
-                this.lblStakeSettingStatus2.caption = `${components_5.FormatUtils.formatNumber(this.freezedStake.amount, { decimalFigures: 4 })} ${tokenSymbol}`;
+                this.lblStakeSettingStatus2.caption = `${(0, index_2.formatNumber)(this.freezedStake.amount)} ${tokenSymbol}`;
             }
-            else if (this.freezedStake.amount == 0) {
+            else if (new eth_wallet_4.BigNumber(this.freezedStake.amount).eq(0)) {
                 this.lblStakeSettingStatus1.caption = "Stake some tokens to your Staked Balance";
-                this.lblStakeSettingStatus2.caption = `Wallet Balance: ${components_5.FormatUtils.formatNumber(this.OAXWalletBalance, { decimalFigures: 4 })} ${tokenSymbol}`;
+                this.lblStakeSettingStatus2.caption = `Wallet Balance: ${(0, index_2.formatNumber)(this.OAXWalletBalance)} ${tokenSymbol}`;
             }
             else {
                 this.lblStakeSettingStatus1.caption = "Currently your Staked Balance:";
-                this.lblStakeSettingStatus2.caption = `${components_5.FormatUtils.formatNumber(this.stakedBalance, { decimalFigures: 4 })} ${tokenSymbol}`;
+                this.lblStakeSettingStatus2.caption = `${(0, index_2.formatNumber)(this.stakedBalance)} ${tokenSymbol}`;
             }
         }
         updateAddStakePanel() {
             this.lblAddStake.caption = this.action === "add" ? "Add Stake" : "Remove Stake";
-            this.lblTotalStakedBalance.caption = components_5.FormatUtils.formatNumber(this.totalStakedBalance, { decimalFigures: 4 });
-            this.lblTotalVotingBalance.caption = components_5.FormatUtils.formatNumber(this.totalVotingBalance, { decimalFigures: 4 });
+            this.lblTotalStakedBalance.caption = (0, index_2.formatNumber)(this.totalStakedBalance);
+            this.lblTotalVotingBalance.caption = (0, index_2.formatNumber)(this.totalVotingBalance);
             this.iconAvailableOn.tooltip.content = "Available on " + this.lastAvailableOn;
             this.lblAvailableOn.caption = this.lastAvailableOn;
             this.pnlAddStake.visible = (0, index_2.isClientWalletConnected)();

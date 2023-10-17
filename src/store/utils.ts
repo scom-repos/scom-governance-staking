@@ -1,4 +1,4 @@
-import { application } from "@ijstech/components";
+import { application, FormatUtils } from "@ijstech/components";
 import { BigNumber, ERC20ApprovalModel, IERC20ApprovalEventOptions, INetwork, Wallet } from "@ijstech/eth-wallet";
 import getNetworkList from "@scom/scom-network-list";
 import { ITokenObject, WETHByChainId } from "@scom/scom-token-list";
@@ -120,4 +120,10 @@ export function isClientWalletConnected() {
 export const getWETH = (chainId: number): ITokenObject => {
   let wrappedToken = WETHByChainId[chainId];
   return wrappedToken;
+}
+
+export function formatNumber(value: number | string, decimalFigures?: number) {
+  decimalFigures = decimalFigures || 4;
+  const newValue = new BigNumber(value).toFixed(decimalFigures);
+  return FormatUtils.formatNumber(newValue, { decimalFigures: decimalFigures });
 }

@@ -82,10 +82,10 @@ export async function getGovState(state: State) {
         let freezeStakeResult = await freezedStake(state, wallet.account.address);
         let stakedBalance = new BigNumber(freezeStakeResult.amount).plus(stakeOfResult);
         const govStakeObject = {
-            stakedBalance: stakedBalance.toNumber(),
+            stakedBalance: stakedBalance.toFixed(),
             lockTill: freezeStakeResult.lockTill,
-            votingBalance: stakeOfResult.toNumber(),
-            freezeStakeAmount: freezeStakeResult.amount.toNumber(),
+            votingBalance: stakeOfResult.toFixed(),
+            freezeStakeAmount: freezeStakeResult.amount.toFixed(),
             freezeStakeTimestamp: freezeStakeResult.timestamp
         };
         return govStakeObject;

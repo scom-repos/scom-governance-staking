@@ -46,6 +46,7 @@ declare module "@scom/scom-governance-staking/store/utils.ts" {
     }
     export function isClientWalletConnected(): boolean;
     export const getWETH: (chainId: number) => ITokenObject;
+    export function formatNumber(value: number | string, decimalFigures?: number): string;
 }
 /// <amd-module name="@scom/scom-governance-staking/store/index.ts" />
 declare module "@scom/scom-governance-staking/store/index.ts" {
@@ -109,10 +110,10 @@ declare module "@scom/scom-governance-staking/api.ts" {
     export function getMinStakePeriod(state: State): Promise<number>;
     export const stakeOf: (state: State, address: string) => Promise<BigNumber>;
     export function getGovState(state: State): Promise<{
-        stakedBalance: number;
+        stakedBalance: string;
         lockTill: number;
-        votingBalance: number;
-        freezeStakeAmount: number;
+        votingBalance: string;
+        freezeStakeAmount: string;
         freezeStakeTimestamp: number;
     }>;
     export function getVotingValue(state: State, param1: any): Promise<{
