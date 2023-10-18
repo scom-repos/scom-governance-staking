@@ -171,7 +171,7 @@ declare module "@scom/scom-governance-staking/formSchema.ts" {
 }
 /// <amd-module name="@scom/scom-governance-staking/flow/initialSetup.tsx" />
 declare module "@scom/scom-governance-staking/flow/initialSetup.tsx" {
-    import { Button, ControlElement, Module } from "@ijstech/components";
+    import { Button, Control, ControlElement, Module } from "@ijstech/components";
     import { State } from "@scom/scom-governance-staking/store/index.ts";
     interface ScomGovernanceStakingFlowInitialSetupElement extends ControlElement {
         data?: any;
@@ -212,6 +212,9 @@ declare module "@scom/scom-governance-staking/flow/initialSetup.tsx" {
         handleClickAction(target: Button): void;
         private handleClickStart;
         render(): any;
+        handleFlowStage(target: Control, stage: string, options: any): Promise<{
+            widget: ScomGovernanceStakingFlowInitialSetup;
+        }>;
     }
 }
 /// <amd-module name="@scom/scom-governance-staking" />

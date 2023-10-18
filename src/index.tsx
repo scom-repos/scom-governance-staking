@@ -1039,8 +1039,10 @@ export default class ScomGovernanceStaking extends Module {
 			});
         } else {
             widget = this;
-            target.appendChild(widget);
-            await widget.ready();
+            if (!options.isWidgetConnected) {
+                target.appendChild(widget);
+                await widget.ready();
+            }
 			let properties = options.properties;
 			let tag = options.tag;
             this.state.handleNextFlowStep = options.onNextStep;

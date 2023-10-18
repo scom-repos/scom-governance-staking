@@ -639,6 +639,21 @@ define("@scom/scom-governance-staking/flow/initialSetup.tsx", ["require", "expor
                         this.$render("i-button", { id: "btnStart", caption: "Start", padding: { top: '0.25rem', bottom: '0.25rem', left: '0.75rem', right: '0.75rem' }, font: { color: Theme.colors.primary.contrastText, size: '1.5rem' }, onClick: this.handleClickStart }))),
                 this.$render("i-scom-wallet-modal", { id: "mdWallet", wallets: [] })));
         }
+        async handleFlowStage(target, stage, options) {
+            let widget = this;
+            if (!options.isWidgetConnected) {
+                let properties = options.properties;
+                let tokenRequirements = options.tokenRequirements;
+                this.state.handleNextFlowStep = options.onNextStep;
+                this.state.handleAddTransactions = options.onAddTransactions;
+                this.state.handleJumpToStep = options.onJumpToStep;
+                await widget.setData({
+                    executionProperties: properties,
+                    tokenRequirements
+                });
+            }
+            return { widget };
+        }
     };
     ScomGovernanceStakingFlowInitialSetup = __decorate([
         (0, components_4.customElements)('i-scom-governance-staking-flow-initial-setup')
@@ -1414,8 +1429,10 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             }
             else {
                 widget = this;
-                target.appendChild(widget);
-                await widget.ready();
+                if (!options.isWidgetConnected) {
+                    target.appendChild(widget);
+                    await widget.ready();
+                }
                 let properties = options.properties;
                 let tag = options.tag;
                 this.state.handleNextFlowStep = options.onNextStep;

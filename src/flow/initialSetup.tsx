@@ -2,6 +2,7 @@ import {
     application,
     Button,
     Container,
+    Control,
     ControlElement,
     customElements,
     IEventBus,
@@ -229,5 +230,20 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
                 <i-scom-wallet-modal id="mdWallet" wallets={[]} />
             </i-vstack>
         )
+    }
+    async handleFlowStage(target: Control, stage: string, options: any) {
+        let widget: ScomGovernanceStakingFlowInitialSetup = this;
+        if (!options.isWidgetConnected) {
+			let properties = options.properties;
+			let tokenRequirements = options.tokenRequirements;
+			this.state.handleNextFlowStep = options.onNextStep;
+            this.state.handleAddTransactions = options.onAddTransactions;
+            this.state.handleJumpToStep = options.onJumpToStep;
+			await widget.setData({ 
+				executionProperties: properties, 
+				tokenRequirements
+			});
+        }
+        return { widget }
     }
 }
