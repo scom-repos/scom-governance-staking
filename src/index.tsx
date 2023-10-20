@@ -640,7 +640,6 @@ export default class ScomGovernanceStaking extends Module {
             const amount = Utils.toDecimals(this.freezedStake.amount, token.decimals).toString();
             const wallet = this.state.getRpcWallet();
             if (receipt) {
-                this.showResultMessage('success', receipt.transactionHash);
                 if (this.state.handleAddTransactions) {
                     const timestamp = await wallet.getBlockTimestamp(receipt.blockNumber.toString());
                     const transactionsInfoArr = [
@@ -657,6 +656,8 @@ export default class ScomGovernanceStaking extends Module {
                     this.state.handleAddTransactions({
                         list: transactionsInfoArr
                     });
+                } else {
+                    this.showResultMessage('success', receipt.transactionHash);
                 }
             }
             if (this.state.handleJumpToStep && this._data.isFlow && this._data.prevStep =='scom-group-queue-pair') {
@@ -664,6 +665,12 @@ export default class ScomGovernanceStaking extends Module {
                 const minThreshold = paramValueObj.minOaxTokenToCreateVote;
                 const votingBalance = (await stakeOf(this.state, wallet.account.address)).toNumber();
                 if (votingBalance >= minThreshold) {
+                    if (this.state.handleUpdateStepStatus) {
+                        this.state.handleUpdateStepStatus({
+                            caption: "Completed",
+                            color: Theme.colors.success.main
+                        });
+                    }
                     this.state.handleJumpToStep({
                         widgetName: 'scom-governance-proposal',
                         executionProperties: {
@@ -672,6 +679,13 @@ export default class ScomGovernanceStaking extends Module {
                             isFlow: true
                         }
                     })
+                } else {
+                    if (this.state.handleUpdateStepStatus) {
+                        this.state.handleUpdateStepStatus({
+                            caption: "Pending to stake",
+                            color: Theme.colors.warning.main
+                        });
+                    }
                 }
             }
             this.refreshUI();
@@ -698,6 +712,12 @@ export default class ScomGovernanceStaking extends Module {
             receipt = await doStake(this.state, this.tokenSelection.value);
         } else {
             receipt = await doUnstake(this.state, this.tokenSelection.value);
+        }
+        if (this.state.handleUpdateStepStatus && this.action === 'add') {
+            this.state.handleUpdateStepStatus({
+                caption: "Pending to unlock",
+                color: Theme.colors.warning.main
+            });
         }
         if (this.state.handleAddTransactions) {
             const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
@@ -1040,6 +1060,7 @@ export default class ScomGovernanceStaking extends Module {
             this.state.handleNextFlowStep = options.onNextStep;
             this.state.handleAddTransactions = options.onAddTransactions;
             this.state.handleJumpToStep = options.onJumpToStep;
+            this.state.handleUpdateStepStatus = options.onUpdateStepStatus;
 			await this.setData(properties);
 			if (tag) {
 				this.setTag(tag);

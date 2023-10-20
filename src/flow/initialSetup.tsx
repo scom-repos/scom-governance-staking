@@ -157,6 +157,12 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
         this.executionProperties.tokenInputValue = this.tokenInput.value;
         this.executionProperties.action = this.action;
         const isBalanceSufficient = new BigNumber(balance).gte(this.tokenInput.value);
+        if (this.state.handleUpdateStepStatus) {
+            this.state.handleUpdateStepStatus({
+                caption: "Completed",
+                color: Theme.colors.success.main
+            });
+        }
         if (this.state.handleNextFlowStep)
             this.state.handleNextFlowStep({
                 isInitialSetup: true,
@@ -239,6 +245,7 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
 			this.state.handleNextFlowStep = options.onNextStep;
             this.state.handleAddTransactions = options.onAddTransactions;
             this.state.handleJumpToStep = options.onJumpToStep;
+            this.state.handleUpdateStepStatus = options.onUpdateStepStatus;
 			await widget.setData({ 
 				executionProperties: properties, 
 				tokenRequirements

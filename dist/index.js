@@ -508,6 +508,12 @@ define("@scom/scom-governance-staking/flow/initialSetup.tsx", ["require", "expor
                 this.executionProperties.tokenInputValue = this.tokenInput.value;
                 this.executionProperties.action = this.action;
                 const isBalanceSufficient = new eth_wallet_3.BigNumber(balance).gte(this.tokenInput.value);
+                if (this.state.handleUpdateStepStatus) {
+                    this.state.handleUpdateStepStatus({
+                        caption: "Completed",
+                        color: Theme.colors.success.main
+                    });
+                }
                 if (this.state.handleNextFlowStep)
                     this.state.handleNextFlowStep({
                         isInitialSetup: true,
@@ -647,6 +653,7 @@ define("@scom/scom-governance-staking/flow/initialSetup.tsx", ["require", "expor
                 this.state.handleNextFlowStep = options.onNextStep;
                 this.state.handleAddTransactions = options.onAddTransactions;
                 this.state.handleJumpToStep = options.onJumpToStep;
+                this.state.handleUpdateStepStatus = options.onUpdateStepStatus;
                 await widget.setData({
                     executionProperties: properties,
                     tokenRequirements
@@ -1210,7 +1217,6 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 const amount = eth_wallet_4.Utils.toDecimals(this.freezedStake.amount, token.decimals).toString();
                 const wallet = this.state.getRpcWallet();
                 if (receipt) {
-                    this.showResultMessage('success', receipt.transactionHash);
                     if (this.state.handleAddTransactions) {
                         const timestamp = await wallet.getBlockTimestamp(receipt.blockNumber.toString());
                         const transactionsInfoArr = [
@@ -1228,12 +1234,21 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                             list: transactionsInfoArr
                         });
                     }
+                    else {
+                        this.showResultMessage('success', receipt.transactionHash);
+                    }
                 }
                 if (this.state.handleJumpToStep && this._data.isFlow && this._data.prevStep == 'scom-group-queue-pair') {
                     const paramValueObj = await (0, api_1.getVotingValue)(this.state, 'vote');
                     const minThreshold = paramValueObj.minOaxTokenToCreateVote;
                     const votingBalance = (await (0, api_1.stakeOf)(this.state, wallet.account.address)).toNumber();
                     if (votingBalance >= minThreshold) {
+                        if (this.state.handleUpdateStepStatus) {
+                            this.state.handleUpdateStepStatus({
+                                caption: "Completed",
+                                color: Theme.colors.success.main
+                            });
+                        }
                         this.state.handleJumpToStep({
                             widgetName: 'scom-governance-proposal',
                             executionProperties: {
@@ -1242,6 +1257,14 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                                 isFlow: true
                             }
                         });
+                    }
+                    else {
+                        if (this.state.handleUpdateStepStatus) {
+                            this.state.handleUpdateStepStatus({
+                                caption: "Pending to stake",
+                                color: Theme.colors.warning.main
+                            });
+                        }
                     }
                 }
                 this.refreshUI();
@@ -1266,6 +1289,12 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             }
             else {
                 receipt = await (0, api_1.doUnstake)(this.state, this.tokenSelection.value);
+            }
+            if (this.state.handleUpdateStepStatus && this.action === 'add') {
+                this.state.handleUpdateStepStatus({
+                    caption: "Pending to unlock",
+                    color: Theme.colors.warning.main
+                });
             }
             if (this.state.handleAddTransactions) {
                 const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
@@ -1430,6 +1459,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 this.state.handleNextFlowStep = options.onNextStep;
                 this.state.handleAddTransactions = options.onAddTransactions;
                 this.state.handleJumpToStep = options.onJumpToStep;
+                this.state.handleUpdateStepStatus = options.onUpdateStepStatus;
                 await this.setData(properties);
                 if (tag) {
                     this.setTag(tag);
