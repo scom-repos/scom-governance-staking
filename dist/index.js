@@ -1221,10 +1221,17 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                     const minThreshold = paramValueObj.minOaxTokenToCreateVote;
                     const votingBalance = (await (0, api_1.stakeOf)(this.state, wallet.account.address)).toNumber();
                     if (this.state.handleUpdateStepStatus) {
-                        this.state.handleUpdateStepStatus({
-                            caption: votingBalance >= minThreshold ? "Completed" : "Pending to stake",
-                            color: Theme.colors.warning.main
-                        });
+                        const data = votingBalance >= minThreshold ?
+                            {
+                                caption: "Completed",
+                                color: Theme.colors.success.main
+                            }
+                            :
+                                {
+                                    caption: "Pending to stake",
+                                    color: Theme.colors.warning.main
+                                };
+                        this.state.handleUpdateStepStatus(data);
                     }
                     if (this.state.handleAddTransactions) {
                         const timestamp = await wallet.getBlockTimestamp(receipt.blockNumber.toString());

@@ -341,7 +341,7 @@ export default class ScomGovernanceStaking extends Module {
                 },
                 setData: async (properties: IGovernanceStaking, linkParams?: Record<string, any>) => {
                     let resultingData = {
-                      ...properties
+                        ...properties
                     };
                     if (!properties.defaultChainId && properties.networks?.length) {
                         resultingData.defaultChainId = properties.networks[0].chainId;
@@ -643,12 +643,19 @@ export default class ScomGovernanceStaking extends Module {
                 const paramValueObj = await getVotingValue(this.state, 'vote');
                 const minThreshold = paramValueObj.minOaxTokenToCreateVote;
                 const votingBalance = (await stakeOf(this.state, wallet.account.address)).toNumber();
-                
+
                 if (this.state.handleUpdateStepStatus) {
-                    this.state.handleUpdateStepStatus({
-                        caption: votingBalance >= minThreshold ? "Completed" : "Pending to stake",
-                        color: Theme.colors.warning.main
-                    });
+                    const data = votingBalance >= minThreshold ?
+                        {
+                            caption: "Completed",
+                            color: Theme.colors.success.main
+                        }
+                        :
+                        {
+                            caption: "Pending to stake",
+                            color: Theme.colors.warning.main
+                        };
+                    this.state.handleUpdateStepStatus(data);
                 }
                 if (this.state.handleAddTransactions) {
                     const timestamp = await wallet.getBlockTimestamp(receipt.blockNumber.toString());
@@ -1032,7 +1039,7 @@ export default class ScomGovernanceStaking extends Module {
             </i-scom-dapp-container>
         )
     }
-    
+
     async handleFlowStage(target: Control, stage: string, options: any) {
         let widget;
         if (stage === 'initialSetup') {
@@ -1047,16 +1054,16 @@ export default class ScomGovernanceStaking extends Module {
                 target.appendChild(widget);
                 await widget.ready();
             }
-			let properties = options.properties;
-			let tag = options.tag;
+            let properties = options.properties;
+            let tag = options.tag;
             this.state.handleNextFlowStep = options.onNextStep;
             this.state.handleAddTransactions = options.onAddTransactions;
             this.state.handleJumpToStep = options.onJumpToStep;
             this.state.handleUpdateStepStatus = options.onUpdateStepStatus;
-			await this.setData(properties);
-			if (tag) {
-				this.setTag(tag);
-			}
+            await this.setData(properties);
+            if (tag) {
+                this.setTag(tag);
+            }
         }
 
         return { widget }
