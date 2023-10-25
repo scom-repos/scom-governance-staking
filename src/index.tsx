@@ -640,6 +640,16 @@ export default class ScomGovernanceStaking extends Module {
             const amount = Utils.toDecimals(this.freezedStake.amount, token.decimals).toString();
             const wallet = this.state.getRpcWallet();
             if (receipt) {
+                const paramValueObj = await getVotingValue(this.state, 'vote');
+                const minThreshold = paramValueObj.minOaxTokenToCreateVote;
+                const votingBalance = (await stakeOf(this.state, wallet.account.address)).toNumber();
+                
+                if (this.state.handleUpdateStepStatus) {
+                    this.state.handleUpdateStepStatus({
+                        caption: votingBalance >= minThreshold ? "Completed" : "Pending to stake",
+                        color: Theme.colors.warning.main
+                    });
+                }
                 if (this.state.handleAddTransactions) {
                     const timestamp = await wallet.getBlockTimestamp(receipt.blockNumber.toString());
                     const transactionsInfoArr = [
@@ -659,18 +669,7 @@ export default class ScomGovernanceStaking extends Module {
                 } else {
                     this.showResultMessage('success', receipt.transactionHash);
                 }
-            }
-            if (this.state.handleJumpToStep && this._data.isFlow && this._data.prevStep =='scom-group-queue-pair') {
-                const paramValueObj = await getVotingValue(this.state, 'vote');
-                const minThreshold = paramValueObj.minOaxTokenToCreateVote;
-                const votingBalance = (await stakeOf(this.state, wallet.account.address)).toNumber();
-                if (votingBalance >= minThreshold) {
-                    if (this.state.handleUpdateStepStatus) {
-                        this.state.handleUpdateStepStatus({
-                            caption: "Completed",
-                            color: Theme.colors.success.main
-                        });
-                    }
+                if (votingBalance >= minThreshold && this.state.handleJumpToStep) {
                     this.state.handleJumpToStep({
                         widgetName: 'scom-governance-proposal',
                         executionProperties: {
@@ -679,13 +678,6 @@ export default class ScomGovernanceStaking extends Module {
                             isFlow: true
                         }
                     })
-                } else {
-                    if (this.state.handleUpdateStepStatus) {
-                        this.state.handleUpdateStepStatus({
-                            caption: "Pending to stake",
-                            color: Theme.colors.warning.main
-                        });
-                    }
                 }
             }
             this.refreshUI();
