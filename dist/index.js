@@ -1183,6 +1183,16 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                     list: transactionsInfoArr
                 });
             }
+            if (this.state.handleJumpToStep && this.action === 'add') {
+                this.state.handleJumpToStep({
+                    widgetName: 'scom-governance-unlock-staking',
+                    executionProperties: {
+                        fromToken: this._data.fromToken,
+                        toToken: this._data.toToken,
+                        isFlow: true
+                    }
+                });
+            }
         }
         onInputAmountChanged(source) {
             const val = source.value;
