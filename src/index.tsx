@@ -442,6 +442,9 @@ export default class ScomGovernanceStaking extends Module {
                 this.comboAction.selectedItem = actionOptions.find(action => action.value === this._data.action);
                 this.action = this._data.action || 'add';
             }
+            if (this._data.isFlow) {
+                this.comboAction.readOnly = true;
+            }
             if (this._data.tokenInputValue) {
                 this.tokenSelection.value = this._data.tokenInputValue;
                 this.lblMinStakeMsg.caption = `You have to stake at least ${formatNumber(this.totalStakedBalance)} ${token.symbol} to create pair executive proposal.`;

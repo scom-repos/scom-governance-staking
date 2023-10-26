@@ -794,6 +794,9 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                         this.comboAction.selectedItem = actionOptions.find(action => action.value === this._data.action);
                         this.action = this._data.action || 'add';
                     }
+                    if (this._data.isFlow) {
+                        this.comboAction.readOnly = true;
+                    }
                     if (this._data.tokenInputValue) {
                         this.tokenSelection.value = this._data.tokenInputValue;
                         this.lblMinStakeMsg.caption = `You have to stake at least ${(0, index_2.formatNumber)(this.totalStakedBalance)} ${token.symbol} to create pair executive proposal.`;
