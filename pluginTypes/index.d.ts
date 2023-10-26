@@ -107,7 +107,6 @@ declare module "@scom/scom-governance-staking/api.ts" {
     import { State } from "@scom/scom-governance-staking/store/index.ts";
     export function doStake(state: State, amount: BigNumber | number | string): Promise<import("@ijstech/eth-contract").TransactionReceipt>;
     export function doUnstake(state: State, amount: BigNumber | number | string): Promise<import("@ijstech/eth-contract").TransactionReceipt>;
-    export function doUnlockStake(state: State): Promise<import("@ijstech/eth-contract").TransactionReceipt>;
     export function getMinStakePeriod(state: State): Promise<number>;
     export const stakeOf: (state: State, address: string) => Promise<BigNumber>;
     export function getGovState(state: State): Promise<{
@@ -243,13 +242,6 @@ declare module "@scom/scom-governance-staking" {
         private loadingElm;
         private lblStakedBalance;
         private lblVotingBalance;
-        private pnlLock;
-        private lblFreezedStake;
-        private mdUnlock;
-        private lblAvailVotingBalance;
-        private btnLock;
-        private lblStakeSettingStatus1;
-        private lblStakeSettingStatus2;
         private comboAction;
         private lblBalance;
         private tokenSelection;
@@ -353,15 +345,11 @@ declare module "@scom/scom-governance-staking" {
         private connectWallet;
         private updateBalance;
         private handleChangeAction;
-        private toggleUnlockModal;
-        private getAddVoteBalanceErrMsg;
-        private addVoteBalance;
         private handleConfirm;
         handleStake(): Promise<void>;
         private onApproveToken;
         onInputAmountChanged(source: Control): void;
         private setMaxBalance;
-        private updateLockPanel;
         private updateAddStakePanel;
         render(): any;
         handleFlowStage(target: Control, stage: string, options: any): Promise<{

@@ -28,15 +28,6 @@ export async function doUnstake(state: State, amount:BigNumber | number | string
     return receipt;
 }
 
-export async function doUnlockStake(state: State) {
-    const wallet = Wallet.getClientInstance();
-    const chainId = state.getChainId();
-    const gov = state.getAddresses(chainId).OAXDEX_Governance;
-    const govContract = new Contracts.OAXDEX_Governance(wallet, gov);
-    const receipt = await govContract.unlockStake();
-    return receipt;
-}
-
 export async function getMinStakePeriod(state: State) {
     const wallet = state.getRpcWallet();
     const chainId = state.getChainId();
