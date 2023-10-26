@@ -591,8 +591,8 @@ export default class ScomGovernanceStaking extends Module {
         }
         if (this.state.handleUpdateStepStatus && this.action === 'add') {
             this.state.handleUpdateStepStatus({
-                caption: "Pending to unlock",
-                color: Theme.colors.warning.main
+                caption: "Completed",
+                color: Theme.colors.success.main
             });
         }
         if (this.state.handleAddTransactions) {
