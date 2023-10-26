@@ -91,7 +91,6 @@ declare module "@scom/scom-governance-staking/interface.ts" {
     }
     interface IGovernanceStakingFlow {
         isFlow?: boolean;
-        prevStep?: string;
         fromToken?: string;
         toToken?: string;
     }
@@ -245,6 +244,7 @@ declare module "@scom/scom-governance-staking" {
         private comboAction;
         private lblBalance;
         private tokenSelection;
+        private lblMinStakeMsg;
         private pnlAddStake;
         private lblAddStake;
         private lblTotalStakedBalance;
@@ -284,6 +284,7 @@ declare module "@scom/scom-governance-staking" {
         get isUnlockVotingBalanceDisabled(): boolean;
         get isBtnDisabled(): boolean;
         get balance(): string;
+        get isBalanceEnoughInFlow(): boolean;
         constructor(parent?: Container, options?: ControlElement);
         removeRpcWalletEvents(): void;
         onHide(): void;
@@ -320,7 +321,6 @@ declare module "@scom/scom-governance-staking" {
                 tokenInputValue?: string;
                 action?: ActionType;
                 isFlow?: boolean;
-                prevStep?: string;
                 fromToken?: string;
                 toToken?: string;
             }>;

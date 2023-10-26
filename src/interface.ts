@@ -14,7 +14,6 @@ export interface IGovernanceStaking extends IGovernanceStakingFlow {
 
 interface IGovernanceStakingFlow {
     isFlow?: boolean;
-    prevStep?: string;
     fromToken?: string;
     toToken?: string;
 }

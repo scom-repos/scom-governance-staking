@@ -72,6 +72,7 @@ export default class ScomGovernanceStaking extends Module {
     private comboAction: ComboBox;
     private lblBalance: Label;
     private tokenSelection: ScomTokenInput;
+    private lblMinStakeMsg: Label;
     private pnlAddStake: VStack;
     private lblAddStake: Label;
     private lblTotalStakedBalance: Label;
@@ -171,7 +172,7 @@ export default class ScomGovernanceStaking extends Module {
     get isBtnDisabled() {
         const bal = new BigNumber(this.balance);
         const val = new BigNumber(this.tokenSelection.value || 0);
-        return val.lte(0) || val.gt(bal) || !this.action;
+        return val.lte(0) || val.gt(bal) || !this.action || !this.isBalanceEnoughInFlow;
     }
 
     get balance() {
@@ -182,6 +183,15 @@ export default class ScomGovernanceStaking extends Module {
             return new BigNumber(this.OAXWalletBalance).toFixed();
         }
         return new BigNumber(0).toFixed();
+    }
+
+    get isBalanceEnoughInFlow() {
+        const val = new BigNumber(this.tokenSelection.value || 0);
+        if (this.action === 'add' && this._data.isFlow && this._data.tokenInputValue) {
+            const minValue = new BigNumber(this._data.tokenInputValue);
+            return val.gte(minValue);
+        }
+        return true;
     }
 
     constructor(parent?: Container, options?: ControlElement) {
@@ -425,15 +435,20 @@ export default class ScomGovernanceStaking extends Module {
             const chainId = this.chainId;
             await this.initWallet();
             await this.updateBalance();
+            const token = this.state.getGovToken(chainId);
             this.tokenSelection.chainId = chainId;
-            this.tokenSelection.token = this.state.getGovToken(chainId);
+            this.tokenSelection.token = token;
             if (this._data.action) {
                 this.comboAction.selectedItem = actionOptions.find(action => action.value === this._data.action);
                 this.action = this._data.action || 'add';
             }
             if (this._data.tokenInputValue) {
                 this.tokenSelection.value = this._data.tokenInputValue;
+                this.lblMinStakeMsg.caption = `You have to stake at least ${formatNumber(this.totalStakedBalance)} ${token.symbol} to create pair executive proposal.`;
+            } else {
+                this.lblMinStakeMsg.caption = "";
             }
+            this.lblMinStakeMsg.visible = false;
             const connected = isClientWalletConnected();
             if (!connected || !this.state.isRpcWalletConnected()) {
                 this.btnConnect.caption = connected ? "Switch Network" : "Connect Wallet";
@@ -445,7 +460,6 @@ export default class ScomGovernanceStaking extends Module {
                 this.btnConnect.enabled = false;
                 this.pnlActionButtons.visible = true;
             }
-            const token = this.state.getGovToken(this.chainId);
             this.approvalModelAction.checkAllowance(token, this.tokenSelection.value);
             try {
                 if (connected) {
@@ -579,17 +593,18 @@ export default class ScomGovernanceStaking extends Module {
     async handleStake() {
         if (this.isBtnDisabled) return;
         const value = formatNumber(this.tokenSelection.value);
-        const content = `${this.action === 'add' ? "Adding" : "Removing"} ${value} Staked Balance`;
+        const action = this.action;
+        const content = `${action === 'add' ? "Adding" : "Removing"} ${value} Staked Balance`;
         this.showResultMessage('warning', content);
         let receipt;
         const token = this.state.getGovToken(this.chainId);
         const amount = Utils.toDecimals(this.tokenSelection.value, token.decimals).toString();
-        if (this.action === 'add') {
+        if (action === 'add') {
             receipt = await doStake(this.state, this.tokenSelection.value);
         } else {
             receipt = await doUnstake(this.state, this.tokenSelection.value);
         }
-        if (this.state.handleUpdateStepStatus && this.action === 'add') {
+        if (this.state.handleUpdateStepStatus && action === 'add') {
             this.state.handleUpdateStepStatus({
                 caption: "Completed",
                 color: Theme.colors.success.main
@@ -599,7 +614,7 @@ export default class ScomGovernanceStaking extends Module {
             const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
             const transactionsInfoArr = [
                 {
-                    desc: `${this.action === 'add' ? 'Stake' : 'Unstake'} ${token.symbol}`,
+                    desc: `${action === 'add' ? 'Stake' : 'Unstake'} ${token.symbol}`,
                     fromToken: token,
                     toToken: null,
                     fromTokenAmount: amount,
@@ -612,7 +627,7 @@ export default class ScomGovernanceStaking extends Module {
                 list: transactionsInfoArr
             });
         }
-        if (this.state.handleJumpToStep && this.action === 'add') {
+        if (this.state.handleJumpToStep && action === 'add') {
             this.state.handleJumpToStep({
                 widgetName: 'scom-governance-unlock-staking',
                 executionProperties: {
@@ -657,6 +672,7 @@ export default class ScomGovernanceStaking extends Module {
         this.btnConfirm.caption = this.action === 'add' ? 'Add' : 'Remove';
         this.btnApprove.enabled = !this.isBtnDisabled;
         this.btnConfirm.enabled = !this.isBtnDisabled;
+        this.lblMinStakeMsg.visible = !this.isBalanceEnoughInFlow;
     }
 
     render() {
@@ -740,6 +756,7 @@ export default class ScomGovernanceStaking extends Module {
                                     </i-hstack>
                                 </i-vstack>
                             </i-vstack>
+                            <i-label id="lblMinStakeMsg" font={{ color: Theme.colors.error.main }} visible={false}></i-label>
                         </i-vstack>
                         <i-vstack
                             id="pnlAddStake"

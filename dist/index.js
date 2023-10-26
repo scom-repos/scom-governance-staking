@@ -740,7 +740,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
         get isBtnDisabled() {
             const bal = new eth_wallet_4.BigNumber(this.balance);
             const val = new eth_wallet_4.BigNumber(this.tokenSelection.value || 0);
-            return val.lte(0) || val.gt(bal) || !this.action;
+            return val.lte(0) || val.gt(bal) || !this.action || !this.isBalanceEnoughInFlow;
         }
         get balance() {
             if (this.action === 'remove') {
@@ -750,6 +750,14 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 return new eth_wallet_4.BigNumber(this.OAXWalletBalance).toFixed();
             }
             return new eth_wallet_4.BigNumber(0).toFixed();
+        }
+        get isBalanceEnoughInFlow() {
+            const val = new eth_wallet_4.BigNumber(this.tokenSelection.value || 0);
+            if (this.action === 'add' && this._data.isFlow && this._data.tokenInputValue) {
+                const minValue = new eth_wallet_4.BigNumber(this._data.tokenInputValue);
+                return val.gte(minValue);
+            }
+            return true;
         }
         constructor(parent, options) {
             super(parent, options);
@@ -779,15 +787,21 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                     const chainId = this.chainId;
                     await this.initWallet();
                     await this.updateBalance();
+                    const token = this.state.getGovToken(chainId);
                     this.tokenSelection.chainId = chainId;
-                    this.tokenSelection.token = this.state.getGovToken(chainId);
+                    this.tokenSelection.token = token;
                     if (this._data.action) {
                         this.comboAction.selectedItem = actionOptions.find(action => action.value === this._data.action);
                         this.action = this._data.action || 'add';
                     }
                     if (this._data.tokenInputValue) {
                         this.tokenSelection.value = this._data.tokenInputValue;
+                        this.lblMinStakeMsg.caption = `You have to stake at least ${(0, index_2.formatNumber)(this.totalStakedBalance)} ${token.symbol} to create pair executive proposal.`;
                     }
+                    else {
+                        this.lblMinStakeMsg.caption = "";
+                    }
+                    this.lblMinStakeMsg.visible = false;
                     const connected = (0, index_2.isClientWalletConnected)();
                     if (!connected || !this.state.isRpcWalletConnected()) {
                         this.btnConnect.caption = connected ? "Switch Network" : "Connect Wallet";
@@ -800,7 +814,6 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                         this.btnConnect.enabled = false;
                         this.pnlActionButtons.visible = true;
                     }
-                    const token = this.state.getGovToken(this.chainId);
                     this.approvalModelAction.checkAllowance(token, this.tokenSelection.value);
                     try {
                         if (connected) {
@@ -1149,18 +1162,19 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             if (this.isBtnDisabled)
                 return;
             const value = (0, index_2.formatNumber)(this.tokenSelection.value);
-            const content = `${this.action === 'add' ? "Adding" : "Removing"} ${value} Staked Balance`;
+            const action = this.action;
+            const content = `${action === 'add' ? "Adding" : "Removing"} ${value} Staked Balance`;
             this.showResultMessage('warning', content);
             let receipt;
             const token = this.state.getGovToken(this.chainId);
             const amount = eth_wallet_4.Utils.toDecimals(this.tokenSelection.value, token.decimals).toString();
-            if (this.action === 'add') {
+            if (action === 'add') {
                 receipt = await (0, api_1.doStake)(this.state, this.tokenSelection.value);
             }
             else {
                 receipt = await (0, api_1.doUnstake)(this.state, this.tokenSelection.value);
             }
-            if (this.state.handleUpdateStepStatus && this.action === 'add') {
+            if (this.state.handleUpdateStepStatus && action === 'add') {
                 this.state.handleUpdateStepStatus({
                     caption: "Completed",
                     color: Theme.colors.success.main
@@ -1170,7 +1184,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                 const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
                 const transactionsInfoArr = [
                     {
-                        desc: `${this.action === 'add' ? 'Stake' : 'Unstake'} ${token.symbol}`,
+                        desc: `${action === 'add' ? 'Stake' : 'Unstake'} ${token.symbol}`,
                         fromToken: token,
                         toToken: null,
                         fromTokenAmount: amount,
@@ -1183,7 +1197,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                     list: transactionsInfoArr
                 });
             }
-            if (this.state.handleJumpToStep && this.action === 'add') {
+            if (this.state.handleJumpToStep && action === 'add') {
                 this.state.handleJumpToStep({
                     widgetName: 'scom-governance-unlock-staking',
                     executionProperties: {
@@ -1219,6 +1233,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             this.btnConfirm.caption = this.action === 'add' ? 'Add' : 'Remove';
             this.btnApprove.enabled = !this.isBtnDisabled;
             this.btnConfirm.enabled = !this.isBtnDisabled;
+            this.lblMinStakeMsg.visible = !this.isBalanceEnoughInFlow;
         }
         render() {
             return (this.$render("i-scom-dapp-container", { id: "dappContainer" },
@@ -1247,7 +1262,8 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
                                         this.$render("i-label", { caption: "Input" }),
                                         this.$render("i-label", { id: "lblBalance", class: "balance-label", width: "50%", caption: "Balance: 0" })),
                                     this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between" },
-                                        this.$render("i-scom-token-input", { id: "tokenSelection", class: "custom-token-selection", width: "100%", isBalanceShown: false, isBtnMaxShown: true, isInputShown: true, tokenReadOnly: true, placeholder: "0.0", value: "0", onSetMaxBalance: this.setMaxBalance.bind(this), onInputAmountChanged: this.onInputAmountChanged.bind(this) }))))),
+                                        this.$render("i-scom-token-input", { id: "tokenSelection", class: "custom-token-selection", width: "100%", isBalanceShown: false, isBtnMaxShown: true, isInputShown: true, tokenReadOnly: true, placeholder: "0.0", value: "0", onSetMaxBalance: this.setMaxBalance.bind(this), onInputAmountChanged: this.onInputAmountChanged.bind(this) })))),
+                            this.$render("i-label", { id: "lblMinStakeMsg", font: { color: Theme.colors.error.main }, visible: false })),
                         this.$render("i-vstack", { id: "pnlAddStake", padding: { top: '1rem', bottom: '1rem', left: '1rem', right: '1rem' }, maxWidth: 440, margin: { left: 'auto', right: 'auto' }, visible: false },
                             this.$render("i-vstack", { class: "none-select", gap: "10px" },
                                 this.$render("i-label", { id: "lblAddStake", caption: "Add Stake", font: { size: '1rem', color: Theme.text.third } }),
