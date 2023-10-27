@@ -159,7 +159,7 @@ export default class ScomGovernanceStakingFlowInitialSetup extends Module {
         const isBalanceSufficient = new BigNumber(balance).gte(this.tokenInput.value);
         if (this.state.handleUpdateStepStatus) {
             this.state.handleUpdateStepStatus({
-                caption: "Completed",
+                status: "Completed",
                 color: Theme.colors.success.main
             });
         }

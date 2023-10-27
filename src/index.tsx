@@ -609,7 +609,7 @@ export default class ScomGovernanceStaking extends Module {
         }
         if (this.state.handleUpdateStepStatus && action === 'add') {
             this.state.handleUpdateStepStatus({
-                caption: "Completed",
+                status: "Completed",
                 color: Theme.colors.success.main
             });
         }

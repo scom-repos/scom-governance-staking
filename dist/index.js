@@ -501,7 +501,7 @@ define("@scom/scom-governance-staking/flow/initialSetup.tsx", ["require", "expor
                 const isBalanceSufficient = new eth_wallet_3.BigNumber(balance).gte(this.tokenInput.value);
                 if (this.state.handleUpdateStepStatus) {
                     this.state.handleUpdateStepStatus({
-                        caption: "Completed",
+                        status: "Completed",
                         color: Theme.colors.success.main
                     });
                 }
@@ -1179,7 +1179,7 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             }
             if (this.state.handleUpdateStepStatus && action === 'add') {
                 this.state.handleUpdateStepStatus({
-                    caption: "Completed",
+                    status: "Completed",
                     color: Theme.colors.success.main
                 });
             }
