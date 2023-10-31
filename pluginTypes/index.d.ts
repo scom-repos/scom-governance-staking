@@ -79,6 +79,7 @@ declare module "@scom/scom-governance-staking/data.json.ts" {
 /// <amd-module name="@scom/scom-governance-staking/interface.ts" />
 declare module "@scom/scom-governance-staking/interface.ts" {
     import { INetworkConfig } from "@scom/scom-network-picker";
+    import { ITokenObject } from "@scom/scom-token-list";
     import { IWalletPlugin } from "@scom/scom-wallet-modal";
     export type ActionType = "add" | "remove";
     export interface IGovernanceStaking extends IGovernanceStakingFlow {
@@ -93,6 +94,7 @@ declare module "@scom/scom-governance-staking/interface.ts" {
         isFlow?: boolean;
         fromToken?: string;
         toToken?: string;
+        customTokens?: Record<number, ITokenObject[]>;
     }
 }
 /// <amd-module name="@scom/scom-governance-staking/index.css.ts" />
@@ -222,6 +224,7 @@ declare module "@scom/scom-governance-staking" {
     import { INetworkConfig } from '@scom/scom-network-picker';
     import { IWalletPlugin } from '@scom/scom-wallet-modal';
     import { ActionType, IGovernanceStaking } from "@scom/scom-governance-staking/interface.ts";
+    import { ITokenObject } from '@scom/scom-token-list';
     interface ScomGovernanceStakingElement extends ControlElement {
         lazyLoad?: boolean;
         networks: INetworkConfig[];
@@ -323,6 +326,7 @@ declare module "@scom/scom-governance-staking" {
                 isFlow?: boolean;
                 fromToken?: string;
                 toToken?: string;
+                customTokens?: Record<number, ITokenObject[]>;
             }>;
             setData: (properties: IGovernanceStaking, linkParams?: Record<string, any>) => Promise<void>;
             getTag: any;
