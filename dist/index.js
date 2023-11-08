@@ -1185,15 +1185,20 @@ define("@scom/scom-governance-staking", ["require", "exports", "@ijstech/compone
             }
             if (this.state.handleAddTransactions) {
                 const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
+                const tokenAmount = components_5.FormatUtils.formatNumber(eth_wallet_4.Utils.fromDecimals(amount, token.decimals).toFixed(), {
+                    decimalFigures: 4
+                });
                 const transactionsInfoArr = [
                     {
                         desc: `${action === 'add' ? 'Stake' : 'Unstake'} ${token.symbol}`,
+                        chainId: this.chainId,
                         fromToken: token,
                         toToken: null,
                         fromTokenAmount: amount,
                         toTokenAmount: '-',
                         hash: receipt.transactionHash,
-                        timestamp
+                        timestamp,
+                        value: `${tokenAmount} ${token.symbol}`
                     }
                 ];
                 this.state.handleAddTransactions({

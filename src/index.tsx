@@ -16,7 +16,8 @@ import {
     IComboItem,
     Icon,
     Modal,
-    Container
+    Container,
+    FormatUtils
 } from '@ijstech/components';
 import ScomDappContainer from '@scom/scom-dapp-container';
 import Assets from './assets';
@@ -615,15 +616,20 @@ export default class ScomGovernanceStaking extends Module {
         }
         if (this.state.handleAddTransactions) {
             const timestamp = await this.state.getRpcWallet().getBlockTimestamp(receipt.blockNumber.toString());
+            const tokenAmount = FormatUtils.formatNumber(Utils.fromDecimals(amount, token.decimals).toFixed(), {
+                decimalFigures: 4
+            });
             const transactionsInfoArr = [
                 {
                     desc: `${action === 'add' ? 'Stake' : 'Unstake'} ${token.symbol}`,
+                    chainId: this.chainId,
                     fromToken: token,
                     toToken: null,
                     fromTokenAmount: amount,
                     toTokenAmount: '-',
                     hash: receipt.transactionHash,
-                    timestamp
+                    timestamp,
+                    value: `${tokenAmount} ${token.symbol}`
                 }
             ];
             this.state.handleAddTransactions({
